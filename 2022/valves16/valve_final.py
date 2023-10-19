@@ -7,18 +7,22 @@ from itertools import combinations
 # Algorithm (see puzzle on https://adventofcode.com/2022/day/16).
 #
 # First, find all shortest paths between all valve rooms. Stored in a dictionary mapping from (room1,room2) to distance.
-# In general, we only focus on useful valves, i.e, those with rate > 0.
+# Otherwise, we only focus on useful valves, i.e, those with rate > 0.
 #
 # Part I: We want to find the most optimal sequence to open the valves in, so we test all the possible combinations of
 # "useful" valves. Brute force! The puzzle in big.in has 15 valves with rate > 0. Testing all sequences of the 15
-# would amount to testing 1307674368000 combinations. However, only a few of these can be reached within the time
+# would amount to testing 15! = 1307674368000 combinations. However, only a few of these can be reached within the time
 # limit of 30 minutes, so it is doable.
 #
 # Part II: Now we have two individuals to open valves. We want to find the combination of two sequences to open the
-# valves in, one for each individual. Again, we test all possible combinations that can be reached within (now 26
-# minutes). We evaluate all possible two-way splits of useful valves, then try all combinations of each set to
+# valves in, one for each individual. Again, we test all possible combinations that can be reached within (now) 26
+# minutes. We evaluate all possible two-way splits of useful valves, then try all combinations of each set to
 # find the best. For example, the set [1,2,3] can be split into [1],[2,3] and [2],[1,3] and [3],[1,2]. As the
-# evaluation of the sequences are independent, then we only need to look at one of 1,2 and 2,1 splits.
+# evaluation of the sequences are independent, we only need to look at either the 1-2 split or the 2-1 split.
+#
+# Also, suppose it is not possible to open all valves within the time limit, it does not make sense to try
+# sequences longer than the length of the best one. Suppose the best has length 6, then we only need to look at
+# the 6-9 split for a puzzle with 15 valves.
 
 class Valve:
     def __init__(self, name, rate, tunnels):
@@ -48,8 +52,8 @@ def find_all_shortest_paths(valves):
         find_shortest_paths(dist, valve, valves)
     return dist
 
-# All sequences that can be reached within the time limit
-def generate_all_sequences(valves, dist, fromm, xs, remaining_time, value_so_far):
+# Evaluate all sequences that can be reached within the time limit
+def evaluate_all_sequences(valves, dist, fromm, xs, remaining_time, value_so_far):
     if remaining_time <= 2 or len(xs) == 0:
         yield ([], value_so_far)
     else:
@@ -61,12 +65,12 @@ def generate_all_sequences(valves, dist, fromm, xs, remaining_time, value_so_far
                 value_so_far2 = value_so_far + valves[x].rate * remaining_time2
                 # ys = xs - {x}
                 ys = [y for y in xs if x != y]
-                for (path, value) in generate_all_sequences(valves, dist, x, ys, remaining_time2, value_so_far2):
+                for (path, value) in evaluate_all_sequences(valves, dist, x, ys, remaining_time2, value_so_far2):
                     yield ([x] + path, value)
 
 def solve_part1(valves, distance, useful_valves, start_valve, max_time, expected_result):
     start_time = time.time()
-    hmm = generate_all_sequences(valves, distance, start_valve, useful_valves, max_time, 0)
+    hmm = evaluate_all_sequences(valves, distance, start_valve, useful_valves, max_time, 0)
     best = None
     best_value = -1
     count = 0
@@ -84,23 +88,22 @@ def solve_part1(valves, distance, useful_valves, start_valve, max_time, expected
         sys.exit(1)
     return best, best_value
 
-# Returns list of pairs of sequences ... comma values: [ ([AA, BB, CC], [DD], value), ([AA, BB, DD], [CC], value) ]
-def generate_all_pairs_of_sequences(valves, distance, fromm, xs, max_time, max_best_length):
+# Returns list of pairs of sequence and values: [ ([AA, BB, CC], [DD], value), ([AA, BB, DD], [CC], value) ]
+def evaluate_all_pairs_of_sequences(valves, distance, fromm, xs, max_time, max_best_length):
     best_sequence_pair = None
     best_value = -1
     count = 0
-    i = max_best_length
-    print(f"Trying {i} / {len(xs) - i} split")
-    xss = combinations(xs, i)
+    print(f"Trying {max_best_length} / {len(xs) - max_best_length} split")
+    xss = combinations(xs, max_best_length)
     for xs1 in xss:
         best_value1 = -1
         best_seq1 = None
-        for (zs, value1) in generate_all_sequences(valves, distance, fromm, xs1, max_time, 0):
+        for (zs, value1) in evaluate_all_sequences(valves, distance, fromm, xs1, max_time, 0):
             if value1 > best_value1:
                 best_value1 = value1
                 best_seq1 = zs
         xs2 = set(xs) - set(xs1)
-        for (ys, value2) in generate_all_sequences(valves, distance, fromm, xs2, max_time, 0):
+        for (ys, value2) in evaluate_all_sequences(valves, distance, fromm, xs2, max_time, 0):
             # count = count + 1
             if best_value1 + value2 > best_value:
                 best_value = best_value1 + value2
@@ -111,7 +114,7 @@ def generate_all_pairs_of_sequences(valves, distance, fromm, xs, max_time, max_b
 
 def solve_part2(valves, distance, useful_valves, start_valve, minutes_available, expected_result, max_best_length):
     start_time = time.time()
-    (best_sequence_pair, best_value) = generate_all_pairs_of_sequences(valves, distance, start_valve, useful_valves, minutes_available, max_best_length)
+    (best_sequence_pair, best_value) = evaluate_all_pairs_of_sequences(valves, distance, start_valve, useful_valves, minutes_available, max_best_length)
     print(f"Best: {best_sequence_pair}")
     print(f"Best: {best_value}", end=" ")
     print("ok" if best_value == expected_result or expected_result == 0 else f"not ok: expected {expected_result}")
@@ -154,15 +157,12 @@ def main():
     filename = "big.in"; expected_result1 = 1716; expected_result2 = 2504 # (['UV', 'FC', 'EZ', 'OY', 'FU', 'NN'], ['JT', 'KE', 'IR', 'PH', 'IF', 'SV'])
 
     valves = read_input(filename)
-
     useful_valves = [valve_name for (valve_name, valve) in valves.items() if valve.rate != 0]
     print(f"useful_valves({len(useful_valves)}): {useful_valves}")
 
     # distance: (valve-name, valve-name) -> distance
     distance = find_all_shortest_paths(valves)
-
     start_room = valve_name_to_id("AA")
-
     (_, _) = solve_part1(valves, distance, useful_valves, start_room, 30, expected_result1)
     (best, best_value) = solve_part1(valves, distance, useful_valves, start_room, 26, 0)
     solve_part2(valves, distance, useful_valves, start_room, 26, expected_result2, len(best))
