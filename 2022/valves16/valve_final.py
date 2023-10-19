@@ -16,9 +16,9 @@ from itertools import combinations
 #
 # Part II: Now we have two individuals to open valves. We want to find the combination of two sequences to open the
 # valves in, one for each individual. Again, we test all possible combinations that can be reached within (now) 26
-# minutes. We evaluate all possible two-way splits of useful valves, then try all combinations of each set to
-# find the best. For example, the set [1,2,3] can be split into [1],[2,3] and [2],[1,3] and [3],[1,2]. As the
-# evaluation of the sequences are independent, we only need to look at either the 1-2 split or the 2-1 split.
+# minutes. We evaluate two-way splits of useful valves, then try all combinations of each set to find the best. For
+# example, the set [1,2,3] can be split into [1],[2,3] and [2],[1,3] and [3],[1,2]. As the  evaluation of the sequences
+# are independent, we only need to look at either the 1-2 split or the 2-1 split.
 #
 # Also, suppose it is not possible to open all valves within the time limit, it does not make sense to try
 # sequences longer than the length of the best one. Suppose the best has length 6, then we only need to look at
