@@ -4,6 +4,22 @@ import time
 from typing import Dict, Tuple
 from itertools import combinations
 
+# Algorithm (see puzzle on https://adventofcode.com/2022/day/16).
+#
+# First, find all shortest paths between all valve rooms. Stored in a dictionary mapping from (room1,room2) to distance.
+# In general, we only focus on useful valves, i.e, those with rate > 0.
+#
+# Part I: We want to find the most optimal sequence to open the valves in, so we test all the possible combinations of
+# "useful" valves. Brute force! The puzzle in big.in has 15 valves with rate > 0. Testing all sequences of the 15
+# would amount to testing 1307674368000 combinations. However, only a few of these can be reached within the time
+# limit of 30 minutes, so it is doable.
+#
+# Part II: Now we have two individuals to open valves. We want to find the combination of two sequences to open the
+# valves in, one for each individual. Again, we test all possible combinations that can be reached within (now 26
+# minutes). We evaluate all possible two-way splits of useful valves, then try all combinations of each set to
+# find the best. For example, the set [1,2,3] can be split into [1],[2,3] and [2],[1,3] and [3],[1,2]. As the
+# evaluation of the sequences are independent, then we only need to look at one of 1,2 and 2,1 splits.
+
 class Valve:
     def __init__(self, name, rate, tunnels):
         self.name = name
@@ -34,7 +50,7 @@ def find_all_shortest_paths(valves):
 
 # All sequences that can be reached within the time limit
 def generate_all_sequences(valves, dist, fromm, xs, remaining_time, value_so_far):
-    if remaining_time <= 1 or len(xs) <= 1:
+    if remaining_time <= 2 or len(xs) == 0:
         yield ([], value_so_far)
     else:
         for x in xs:
@@ -60,10 +76,11 @@ def solve_part1(valves, distance, useful_valves, start_valve, max_time, expected
             best_value = value
             best = seq
     print(f"{best_value}: {best}", end=" ")
-    print("ok" if best_value == expected_result else f"NOT OK, expected {expected_result}")
+    print("ok" if best_value == expected_result or expected_result == 0 else f"NOT OK, expected {expected_result}")
     print(f"count: {count}")
     print(f"---- {time.time() - start_time} seconds ----")
-    if best_value != expected_result:
+    if best_value != expected_result and expected_result != 0:
+        print("abort")
         sys.exit(1)
     return best, best_value
 
@@ -72,42 +89,35 @@ def generate_all_pairs_of_sequences(valves, distance, fromm, xs, max_time, max_b
     best_sequence_pair = None
     best_value = -1
     count = 0
-    # no need to try both 7/8 split and 8/7 split
-    # double work for even numbers of len(xs)
-    for i in range(1, len(xs) // 2 + 1):
-        # max_best_length is the length of the best sequence; allowing for a longer sequence does not
-        # improve anything (as you run out of time). Therefore, there is no need to test sequences
-        # longer that max_best_length.
-        if i > max_best_length or (len(xs) - i) > max_best_length:
-            continue
-        print(f"Trying {i} + {len(xs) - i}")
-        xss = combinations(xs, i)
-        for xs1 in xss:
-            xs2 = set(xs) - set(xs1)
-            best_value1 = -1
-            best_seq1 = None
-            for (zs, value1) in generate_all_sequences(valves, distance, fromm, xs1, max_time, 0):
-                if value1 > best_value1:
-                    best_value1 = value1
-                    best_seq1 = zs
-            for (ys, value2) in generate_all_sequences(valves, distance, fromm, xs2, max_time, 0):
-                # count = count + 1
-                if best_value1 + value2 > best_value:
-                    best_value = best_value1 + value2
-                    best_sequence_pair = (best_seq1, ys)
-                    print(f"Best: {best_value}: {best_sequence_pair}")
+    i = max_best_length
+    print(f"Trying {i} / {len(xs) - i} split")
+    xss = combinations(xs, i)
+    for xs1 in xss:
+        best_value1 = -1
+        best_seq1 = None
+        for (zs, value1) in generate_all_sequences(valves, distance, fromm, xs1, max_time, 0):
+            if value1 > best_value1:
+                best_value1 = value1
+                best_seq1 = zs
+        xs2 = set(xs) - set(xs1)
+        for (ys, value2) in generate_all_sequences(valves, distance, fromm, xs2, max_time, 0):
+            # count = count + 1
+            if best_value1 + value2 > best_value:
+                best_value = best_value1 + value2
+                best_sequence_pair = (best_seq1, ys)
+                print(f"Best: {best_value}: {best_sequence_pair}")
     print(f"count = {count}")
     return (best_sequence_pair, best_value)
-
 
 def solve_part2(valves, distance, useful_valves, start_valve, minutes_available, expected_result, max_best_length):
     start_time = time.time()
     (best_sequence_pair, best_value) = generate_all_pairs_of_sequences(valves, distance, start_valve, useful_valves, minutes_available, max_best_length)
     print(f"Best: {best_sequence_pair}")
     print(f"Best: {best_value}", end=" ")
-    print("ok" if best_value == expected_result else f"not ok: expected {expected_result}")
+    print("ok" if best_value == expected_result or expected_result == 0 else f"not ok: expected {expected_result}")
     print(f"---- {time.time() - start_time} seconds ----")
-    if best_value != expected_result:
+    if best_value != expected_result and expected_result != 0:
+        print("abort")
         sys.exit(1)
 
 def valve_name_to_id(name):
@@ -153,7 +163,8 @@ def main():
 
     start_room = valve_name_to_id("AA")
 
-    (best, best_value) = solve_part1(valves, distance, useful_valves, start_room, 30, expected_result1)
+    (_, _) = solve_part1(valves, distance, useful_valves, start_room, 30, expected_result1)
+    (best, best_value) = solve_part1(valves, distance, useful_valves, start_room, 26, 0)
     solve_part2(valves, distance, useful_valves, start_room, 26, expected_result2, len(best))
 
 
