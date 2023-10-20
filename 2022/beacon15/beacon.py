@@ -73,6 +73,7 @@ def find_non_overlapping_intervals(intervals, start_x, end_x):
     # when we meet a new interval starting after the current one, the current does not overlap with others
     #     [.......]   [...]
     #
+    non_overlapping_intervals = []
     current_interval = None
     for (x1, x2) in intervals:
         # Truncate intervals if the search range is limited
