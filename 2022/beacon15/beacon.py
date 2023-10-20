@@ -41,9 +41,9 @@ def read_input(filename):
     return sensors
 
 def verify_result(result, expected_result, exit_on_fail=True):
-    #print(f"result={result} expected_result={"None" if expected_result is None else expected_result}", end=" ")
+    print(f"result={result} expected_result={"None" if expected_result is None else expected_result}", end=" ")
     ok = expected_result is None or result == expected_result
-    #print("(OK)" if ok else "(NOT OK)")
+    print("(OK)" if ok else "(NOT OK)")
     if not ok and exit_on_fail:
         print("FAIL")
         sys.exit(1)
@@ -86,10 +86,11 @@ def find_non_overlapping_intervals(intervals, start_x, end_x):
             if x1 <= current_interval.x2 and x2 > current_interval.x2:
                 current_interval.x2 = x2
             elif x1 > current_interval.x2:
-                yield (current_interval.x1, current_interval.x2)
+                non_overlapping_intervals.append( (current_interval.x1, current_interval.x2) )
                 current_interval = None
     if current_interval is not None:
-        yield (current_interval.x1, current_interval.x2)
+        non_overlapping_intervals.append( (current_interval.x1, current_interval.x2) )
+    return non_overlapping_intervals
 
 def count_beacons(sensors, y_in, non_overlapping_intervals):
     beacons_found = []
@@ -107,9 +108,11 @@ def solve(sensors, y_in, expected_result, exit_on_fail, start_x=None, end_x=None
     covered_count = 0
     for (x1, x2) in non_overlapping_intervals:
         covered_count += (x2 - x1) + 1
-    beacons_count = count_beacons(sensors, y_in, non_overlapping_intervals)
-    covered_count -= beacons_count
-    verify_result(covered_count, expected_result, exit_on_fail)
+    if start_x is None:
+        # it is only for part I of the puzzle, we need to compensate for existing beacons
+        beacons_count = count_beacons(sensors, y_in, non_overlapping_intervals)
+        covered_count -= beacons_count
+    # verify_result(covered_count, expected_result, exit_on_fail)
     return covered_count
 
 
@@ -121,23 +124,24 @@ def main():
     start_time = time.time()
 
     if False:
-        covered = solve(sensors, y_in=y_in, expected_result=expected_result_1, exit_on_fail=True)
-        print(f"covered: {covered}")
+        solve(sensors, y_in=y_in, expected_result=expected_result_1, exit_on_fail=True)
 
-    rng = range(0, max_coordinate + 1)
-    if False:
-        # rng = range(2638237 - 50000, 2638237 + 50000)
-        for y in rng:
+    if True:
+        # range(2638237 - 50000, 2638237 + 50000)
+        for y in range(0, max_coordinate + 1):
+
             covered = solve(sensors, y_in=y, expected_result=None, exit_on_fail=False, start_x=0, end_x=max_coordinate)
+            if y % 100000 == 0:
+                print(y, covered)
             if covered == max_coordinate:
                 print(f"Found y={y}")
 
-    if True:
-        # rng = range(3270298 - 50000, 3270298 + 50000)
+    if False:
+        # range(3270298 - 50000, 3270298 + 50000)
         swapped_sensors = []
         for sensor in sensors:
             swapped_sensors.append(Sensor(sensor.y, sensor.x, sensor.beacon_y, sensor.beacon_x))
-        for y in rng:
+        for y in range(0, max_coordiante + 1):
             covered = solve(swapped_sensors, y_in=y, expected_result=None, exit_on_fail=False, start_x=0, end_x=max_coordinate)
             if covered == max_coordinate:
                 print(f"Found x={y}")
