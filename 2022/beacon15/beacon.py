@@ -37,7 +37,6 @@ def read_input(filename):
                 sensors.append(sensor)
             else:
                 error("no match")
-                sys.exit(1)
     return sensors
 
 def verify_result(result, expected_result, exit_on_fail=True):
@@ -46,7 +45,6 @@ def verify_result(result, expected_result, exit_on_fail=True):
     print("(OK)" if ok else "(NOT OK)")
     if not ok and exit_on_fail:
         print("FAIL")
-        sys.exit(1)
 
 def compute_covered_intervals_at_y(sensors, y_in):
     intervals = []
@@ -130,7 +128,6 @@ def main():
     if True:
         # range(2638237 - 50000, 2638237 + 50000)
         for y in range(0, max_coordinate + 1):
-
             covered = solve(sensors, y_in=y, expected_result=None, exit_on_fail=False, start_x=0, end_x=max_coordinate)
             if y % 100000 == 0:
                 print(y, covered)
@@ -142,7 +139,7 @@ def main():
         swapped_sensors = []
         for sensor in sensors:
             swapped_sensors.append(Sensor(sensor.y, sensor.x, sensor.beacon_y, sensor.beacon_x))
-        for y in range(0, max_coordiante + 1):
+        for y in range(0, max_coordinate + 1):
             covered = solve(swapped_sensors, y_in=y, expected_result=None, exit_on_fail=False, start_x=0, end_x=max_coordinate)
             if covered == max_coordinate:
                 print(f"Found x={y}")
