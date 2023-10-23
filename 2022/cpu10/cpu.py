@@ -52,7 +52,7 @@
 #           begin of cycle 3, X = 16
 # trace[3]  middle of cycle 3, X = 16
 #
-# As a small hack to ease the translation, we define noop as 0 and addx as zero, and treat the assembly instructions
+# As a small hack to ease the translation, we define noop and addx as zero, and treat the assembly instructions
 # (the input) as a sequence of commands and arguments alike. For example, the program "noop; addx 3; addx -5" becomes
 # [noop, addx, -5, noop] which in turns becomes [0, 0, -5, 0]. Since each code takes one cycle, we very conveniently
 # achieve noop taking 1 cycle and addx taking 2.
