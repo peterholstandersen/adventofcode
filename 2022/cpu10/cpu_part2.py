@@ -15,10 +15,9 @@ x = 1
 cycle = 1
 while cycle < len(assembler):
     if assembler[cycle] == "addx":
-        arg = eval(assembler[cycle + 1])
         scan += pixel((cycle - 1) % 40, x)
         scan += pixel(cycle % 40, x)
-        x = x + arg
+        x = x + eval(assembler[cycle + 1])
         cycle = cycle + 2
     elif assembler[cycle] == "noop":
         scan += pixel((cycle - 1) % 40, x)
