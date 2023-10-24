@@ -1,5 +1,4 @@
 import sys
-from collections import defaultdict
 
 compose = lambda f, g: lambda x: f(g(x))
 
@@ -49,22 +48,47 @@ def part2(length):
     body = [ start ] * length
     visited = { start }
     for d in directions:
+        # #print(body, d, end=" ")
         body[0] = eval(f"{d}({body[0]})")
         for i in range(1, length):
             prev = body[i - 1]
             this = body[i]
             body[i] = moves[(prev[0] - this[0], prev[1] - this[1])](this)
         visited.add(body[-1])
+    print()
     print(len(visited))
 
-part2(2)    # is the same as part1()
+pairs = lambda body: [(body[i - 1], body[i]) for i in range(1, len(body))]
+
+def part2b(length):
+    start = (0, 0)
+    body = [ start ] * length
+    visited = { start }
+    for d in directions:
+        # print(body, dir, end=" ")
+        body[0] = eval(d)(body[0])
+        for i in range(1, length):
+            (line1, col1) = body[i - 1]
+            (line2, col2) = body[i]
+            body[i] = moves[(line1 - line2, col1 - col2)](body[i])
+        visited.add(body[-1])
+    print()
+    print(len(visited))
+
+move = lambda prev, this: prev
+
+def moveit(prev, body):
+    # body[0] has moved, now make the rest follow
+    b1 = move(prev, body[1])
+    return body[0] + moveit(b1 + body[2:])
+
+#part2(2)
+#part2b(2)    # is the same as part1()
+# part2(10)
 part2(10)
+part2b(10)
+
 # part1: 6209
 # part2: 2460
 
-def pairs(body):
-    return [(body[i - 1], body[i]) for i in range(1, len(body))]
-
-def right(body):
-    [ R(body[0]) ] + [ moves[(prev[0] - this[0], prev[1] - this[1])](this) for (prev, this) in pairs(body) ]
 
