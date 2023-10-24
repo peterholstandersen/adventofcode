@@ -11,14 +11,8 @@ UR = compose(U, R)
 UL = compose(U, L)
 DR = compose(D, R)
 DL = compose(D, L)
-stay = lambda x: x
-_ = stay
+_ = lambda x: x  # stay put
 
-# Rules for moving the tail. Since we cannot index a list with negative numbers, the indices are offset by 2.
-# tail_move_rules[dl+2, dc+2] specifies which direction the tail shall move in where
-# dl = head_line - tail_line and dc = head_col - tail_col. The _ denotes "stay". So if head is 2 lower
-# than tail and they are in the same column, then dl = 2 and dc = 0, tail needs to move
-# tail_move_rules[2 + 2, 0 + 2] = D, which is down.
 def move_tail(head, tail):
     direction = [
         [UL, UL, U, UR, UR],
@@ -29,11 +23,13 @@ def move_tail(head, tail):
     ][head[0] - tail[0] + 2][head[1] - tail[1] + 2]
     return direction(tail)
 
-with open("big.in") as file:
-    dcs = [ direction_count.split(" ") for direction_count in file.read().strip().split("\n") ]
-    directions = "".join([direction * eval(count) for (direction, count) in dcs])
+def read_file(filename):
+    with open(filename) as file:
+        dcs = [ direction_count.split(" ") for direction_count in file.read().strip().split("\n") ]
+        directions = "".join([direction * eval(count) for (direction, count) in dcs])
+    return directions
 
-def part1():
+def part1(directions):
     visited = set()
     head = (0, 0)
     tail = (0, 0)
@@ -43,7 +39,7 @@ def part1():
         visited.add(tail)
     print(len(visited))
 
-def part2(length):
+def part2(directions, length):
     # body[0] is the head
     start = (0, 0)
     body = [ start ] * length
@@ -55,9 +51,33 @@ def part2(length):
         visited.add(body[-1])
     print(len(visited))
 
-part1()
-part2(2)
-part2(10)
+# heads are already moved, tails need to be moved
+def move_body(heads, tails):
+    if tails == []:
+        return heads
+    return move_body(heads + [move_tail(heads[-1], tails[0])], tails[1:])
 
+def part2b(directions, length):
+    # body[0] is the head
+    start = (0, 0)
+    body = [ start ] * length
+    visited = { start }
+    for direction in directions:
+        body = move_body([ eval(direction)(body[0]) ], body[1:])
+        visited.add(body[-1])
+    print(len(visited))
+
+def main():
+    directions = read_file("big.in")
+    sys.setrecursionlimit(len(directions) + 10)
+    part1(directions)
+    part2(directions, 2)       # same as part1(directions)
+    part2(directions, 10)
+    part2b(directions, 10)
+
+if __name__ == "__main__":
+    main()
+
+# Results
 # part1: 6209
 # part2: 2460
