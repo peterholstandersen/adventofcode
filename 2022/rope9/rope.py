@@ -1,4 +1,5 @@
 import sys
+from typing import Tuple
 
 compose = lambda f, g: lambda x: f(g(x))
 
@@ -13,7 +14,7 @@ DR = compose(D, R)
 DL = compose(D, L)
 _ = lambda x: x  # stay put
 
-def move_tail(head, tail):
+def move_tail(head: Tuple[int, int], tail: Tuple[int, int]) -> Tuple[int, int]:
     direction = [
         [UL, UL, U, UR, UR],
         [UL, _,  _,  _, UR],
