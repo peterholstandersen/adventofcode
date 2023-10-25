@@ -1,5 +1,9 @@
 import sys
-from typing import Tuple
+from typing import Tuple, List, Callable
+
+Position = Tuple[int, int]
+Body = List[Tuple]
+MoveFunction = Callable[[Position], Position]
 
 compose = lambda f, g: lambda x: f(g(x))
 
@@ -14,7 +18,7 @@ DR = compose(D, R)
 DL = compose(D, L)
 _ = lambda x: x  # stay put
 
-def move_tail(head: Tuple[int, int], tail: Tuple[int, int]) -> Tuple[int, int]:
+def move_tail(head: Position, tail: Position) -> Position:
     direction = [
         [UL, UL, U, UR, UR],
         [UL, _,  _,  _, UR],

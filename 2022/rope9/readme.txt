@@ -47,15 +47,6 @@ what if we take the functiomania a bit further ... I want to treat the input as 
 give the answer to the puzzle. In practice, I do a small transformation of the input so that you can still
 recognize it as the input, then call eval on it to get the answer.
 
-I redefine the movement functions R, D, ... so instead of taking a single position as parameter they take a
-sequence of positions denoting the entire rope, we call the sequence "body" (if it has a head and a tail and a body,
-then it must be a python!). The functions R, D, ... shall return the new body _and_ the number of visited positions
-by the tail. In order to collect the number of visited positions, a small bag is tied to the tail of the snake.
-In the bag there is a set of positions. For example, you could have a three long snake with the head in (0,3) and
-tail in (0,1) the sequence would look like [ (0,3), (0,2), (0,1), { (0,1) } ]. The last element is the bag, saying
-that the tail (second but last position) has visited (0,1). Suppose the snake moves right, then we have:
-[ (0,4), (0,3), (0,2), {(0,1), (0,2)} ].
-
 In rope_fun.py we have redefined the movement functions, so that they move the entire body, then we transform the input
 to a sequence of function calls as above: L(D(D(R(R(R(start)))))) take the last element of this (the bag) and see
 how many position we visited ... only, Python said: "too many parentheses" ... I guess, we are not in Lisp anymore.
