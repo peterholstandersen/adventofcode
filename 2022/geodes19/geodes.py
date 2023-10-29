@@ -1,4 +1,3 @@
-import sys
 import time
 import math
 import re
@@ -23,11 +22,11 @@ from functools import cache
 count = 0
 
 class State:
-    def __init__(self, blueprint, max_useful, resources, robots):
-        self.blueprint  = blueprint
-        self.max_useful = max_useful
-        self.resources  = resources
-        self.robots     = robots
+    def __init__(self, blueprint, max_useful_robots, resources, robots):
+        self.blueprint = blueprint
+        self.max_useful_robots = max_useful_robots
+        self.resources = resources
+        self.robots = robots
 
     def __str__(self):
         return f"resources={self.resources} robots={self.robots}"
@@ -93,38 +92,38 @@ def find_max(state, time_left):
         return state.resources[3]
 
     for i in range(3):
-        # time_left * state.max_useful[i] is the maximum amount of resources we can possibly spend in the time left
-        # state.robots[i] * (time_left - 1) is the amount of resources we will produce
-        # max_useful_resource is then the maximum number of resources we could have right now
-        # Having more resource than that will not produce more or less geodes.
+        # time_left * state.max_useful[i] is the maximum amount of resources we can possibly spend in the time left.
+        # state.robots[i] * (time_left - 1) is the amount of resources we will produce.
+        # max_useful_resources is then the amount of resources we would need now in order to have enough.
+        # Having more resource than that will produce exactly the same amount of geodes in the end.
         # By calling find_max using max_useful_resources rather than the actual amount of resources,
-        # will use the cached value, reducing the runtime complexity significantly.
-        max_useful_resources = time_left * state.max_useful[i] - state.robots[i] * (time_left - 1)
+        # we will use the cached value, reducing the runtime complexity significantly.
+        max_useful_resources = time_left * state.max_useful_robots[i] - state.robots[i] * (time_left - 1)
         if state.resources[i] > max_useful_resources:
             # not so nice, but cant change a tuple ...
             suk = list(state.resources)
             suk[i] = max_useful_resources
             new_resources = tuple(suk)
             # use the cached value
-            new_state = State(state.blueprint, state.max_useful, new_resources, state.robots)
+            new_state = State(state.blueprint, state.max_useful_robots, new_resources, state.robots)
             return find_max(new_state, time_left)
 
     max_value = -1
     built_something = False
     for i in range(0, len(state.blueprint)):
         (robot, cost) = (state.blueprint[i][0], state.blueprint[i][1])
-        # No point in building another if we already have the amount we need
-        if state.robots[i] >= state.max_useful[i]:
+        # No point in building another if we already have the amount we can use
+        if state.robots[i] >= state.max_useful_robots[i]:
             continue
         # Time needed to have enough resources to build the robot
         time_needed = calculate_time_needed(state, cost)
-        if time_left - time_needed >= 0:
+        if time_left > time_needed:
             built_something = True
-            # The new robot is not productive till the round after it has been built
+            # The new robot will not be productive till the round after it has been built
             new_resources = add(state.resources, mult(time_needed + 1, state.robots))
             new_resources = subtract(new_resources, cost)
             new_robots = add(state.robots, robot)
-            new_state = State(state.blueprint, state.max_useful, new_resources, new_robots)
+            new_state = State(state.blueprint, state.max_useful_robots, new_resources, new_robots)
             # Fastforward to the round after the robot has been built
             value = find_max(new_state, time_left - time_needed - 1)
             if value > max_value:
@@ -151,8 +150,8 @@ def get_start_state(blueprint):
     return State(blueprint, max_useful, (0, 0, 0, 0), (1, 0, 0, 0))
 
 def main():
-    filename = "small.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1
-    # filename = "big.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1[0:3]
+    # filename = "small.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1
+    filename = "big.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1[0:3]
     start_time = time.time()
     result_part1 = 0
     for index in range(len(blueprints_part1)):
@@ -180,6 +179,6 @@ def main():
 #
 # part1: big.in   1092
 # part2: big.in   3542
-# 17 seconds
+# 16 seconds
 if __name__ == "__main__":
     main()
