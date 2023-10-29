@@ -5,27 +5,22 @@ import re
 from functools import cache
 
 # Blueprint 1:
-#
-# Each ore robot costs 4 ore.
+#  Each ore robot costs 4 ore.
 #  Each clay robot costs 2 ore.
 #  Each obsidian robot costs 3 ore and 14 clay.
 #  Each geode robot costs 2 ore and 7 obsidian.
 
-blueprint1 = (
-    # robot, (ore, clay, obsidian, geode)
-    ((1, 0, 0, 0), (4,  0, 0, 0)),
-    ((0, 1, 0, 0), (2,  0, 0, 0)),
-    ((0, 0, 1, 0), (3, 14, 0, 0)),
-    ((0, 0, 0, 1), (2,  0, 7, 0)),
-    )
+# Blueprint internal representation. Maybe not the smartest ... but, ...
+# Blueprint: (robot, (ore, clay, obsidian, geode)) x 4
+# Example
+# (
+#    ((1, 0, 0, 0), (4,  0, 0, 0)),
+#    ((0, 1, 0, 0), (2,  0, 0, 0)),
+#    ((0, 0, 1, 0), (3, 14, 0, 0)),
+#    ((0, 0, 0, 1), (2,  0, 7, 0)),
+# )
 
-blueprint2 = (
-    # robot, (ore, clay, obsidian, geode)
-    ((1, 0, 0, 0), (2, 0,  0, 0)),
-    ((0, 1, 0, 0), (3, 0,  0, 0)),
-    ((0, 0, 1, 0), (3, 8,  0, 0)),
-    ((0, 0, 0, 1), (3, 0, 12, 0)),
-)
+count = 0
 
 class State:
     def __init__(self, blueprint, max_useful, resources, robots):
@@ -34,11 +29,8 @@ class State:
         self.resources  = resources
         self.robots     = robots
 
-    def evaluate(self, time_left):
-        return self.resources[3]
-
     def __str__(self):
-        return f"resources={self.resources} robots={self.robots} value={self.evaluate(0)}"
+        return f"resources={self.resources} robots={self.robots}"
 
     def __eq__(self, other) -> bool:
         return self.resources == other.resources and self.robots == other.robots
@@ -53,9 +45,7 @@ def subtract(xs, ys):
     return ( xs[0] - ys[0], xs[1] - ys[1], xs[2] - ys[2], xs[3] - ys[3] )
 
 def mult(n, xs):
-    # marginal speedup
     return ( n * xs[0], n * xs[1], n * xs[2], n * xs[3] )
-    # return tuple([ n * x for x in xs ])
 
 # Blueprint 1:
 #   Each ore robot costs 4 ore.
@@ -64,7 +54,6 @@ def mult(n, xs):
 #   Each geode robot costs 2 ore and 7 obsidian.
 #
 # 7 numbers in total for a blueprint
-
 def read_input(filename):
     with open(filename) as file:
         numbers = list(map(int, re.findall(r"\d+", file.read().strip())))
@@ -82,45 +71,37 @@ def read_input(filename):
 def calculate_time_needed1(need, robot_count):
     if need <= 0:
         return 0
-    # need > 0
     if robot_count == 0:
         return math.inf
-    # need > 0 and robot_count > 0
     time = need // robot_count
     if need % robot_count != 0:
         time = time + 1
     return time
 
-# time needed until you have the necessary resources, 0 if you have them all
+# time needed until you have all the needed resources, 0 if you have them all
 def calculate_time_needed(state, needs):
-    ctn = calculate_time_needed1
-    res = state.resources
-    rob = state.robots
-    # 11% speedup
-    #return max((
-    #    ctn(needs[0] - res[0], rob[0]),
-    #    ctn(needs[1] - res[1], rob[1]),
-    #    ctn(needs[2] - res[2], rob[2]),
-    #3))
     return max([calculate_time_needed1(need - res, rob) for (res, rob, need) in zip(state.resources, state.robots, needs)])
-
-count = 0
-max_value_global = -1
 
 @cache
 def find_max(state, time_left):
-    # print("time_left", time_left, "state:", state)
-    # 4% speedup
-    global count, max_value_global
+    # 4% speedup to remove count
+    global count
     count += 1
     if count % 100000 == 0:
         print(count)
     if time_left == 0:
-        return state.evaluate(0)
+        return state.resources[3]
 
     for i in range(3):
+        # time_left * state.max_useful[i] is the maximum amount of resources we can possibly spend in the time left
+        # state.robots[i] * (time_left - 1) is the amount of resources we will produce
+        # max_useful_resource is then the maximum number of resources we could have right now
+        # Having more resource than that will not produce more or less geodes.
+        # By calling find_max using max_useful_resources rather than the actual amount of resources,
+        # will use the cached value, reducing the runtime complexity significantly.
         max_useful_resources = time_left * state.max_useful[i] - state.robots[i] * (time_left - 1)
         if state.resources[i] > max_useful_resources:
+            # not so nice, but cant change a tuple ...
             suk = list(state.resources)
             suk[i] = max_useful_resources
             new_resources = tuple(suk)
@@ -132,84 +113,73 @@ def find_max(state, time_left):
     built_something = False
     for i in range(0, len(state.blueprint)):
         (robot, cost) = (state.blueprint[i][0], state.blueprint[i][1])
+        # No point in building another if we already have the amount we need
         if state.robots[i] >= state.max_useful[i]:
             continue
+        # Time needed to have enough resources to build the robot
         time_needed = calculate_time_needed(state, cost)
-        if time_left - time_needed >= 0:  # marginal
-            # current resources plus production till the (end - 1) without building is: ... could be -2 or -3, but opt. later
-            x = state.resources[i] + state.robots[i] * (time_left - 1)
-            # resources with the built
-            y = state.resources[i] + state.robots[i] + (state.robots[i] + 1) * (time_left - 2)
-            if False and y <= x:
-                continue
+        if time_left - time_needed >= 0:
             built_something = True
-            new_resources = add(state.resources, mult(time_needed + 1, state.robots))   # The new robot is not productive yet
-            new_resources = subtract(new_resources, cost)        # build
+            # The new robot is not productive till the round after it has been built
+            new_resources = add(state.resources, mult(time_needed + 1, state.robots))
+            new_resources = subtract(new_resources, cost)
             new_robots = add(state.robots, robot)
             new_state = State(state.blueprint, state.max_useful, new_resources, new_robots)
+            # Fastforward to the round after the robot has been built
             value = find_max(new_state, time_left - time_needed - 1)
             if value > max_value:
                 max_value = value
 
     if not built_something:
-        new_resources = add(state.resources, mult(time_left, state.robots))
-        new_state = State(state.blueprint, state.max_useful, new_resources, state.robots)
-        value = new_state.evaluate(0)
+        # Compute how many geodes we will have at the end
+        value = state.resources[3] + time_left * state.robots[3]
         if value > max_value:
             max_value = value
 
     return max_value
 
+def get_start_state(blueprint):
+    # Maximum number of useful robots.
+    # There is no point in producing more resources than we can spend in one round.
+    max_useful =(
+        max([cost[0] for (_, cost) in blueprint]),
+        max([cost[1] for (_, cost) in blueprint]),
+        max([cost[2] for (_, cost) in blueprint]),
+        math.inf  # you can never have too many geodes robots :)
+    )
+    # We start with 0 resources and 1 ore robot.
+    return State(blueprint, max_useful, (0, 0, 0, 0), (1, 0, 0, 0))
 
 def main():
-    blueprints = read_input("small.in")
-    # blueprints = read_input("big.in")[0:3]
+    filename = "small.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1
+    # filename = "big.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1[0:3]
     start_time = time.time()
-    result = 1
-    for blueprint in blueprints:
-        print(blueprint)
-        max_useful = (
-            max([cost[0] for (_, cost) in blueprint]),
-            max([cost[1] for (_, cost) in blueprint]),
-            max([cost[2] for (_, cost) in blueprint]),
-            math.inf  # you can never have too many geodes robots :)
-        )
-        start = State(blueprint, max_useful, (0,0,0,0), (1,0,0,0)) # blueprints[0] gives 9, blueprints[1] gives 12
+    result_part1 = 0
+    for index in range(len(blueprints_part1)):
         find_max.cache_clear()
-        #global max_value_global
-        #max_value_global = -1
-        x = find_max(start, 24)
-        print(x, x[0] if type(x) == tuple else "", "geodes")
-        print("count", count)
-        result = result * x
-    print("result", result)
-    print(f"=== {time.time() - start_time} seconds ===")
-    sys.exit(1)
-    # 3542
+        start = get_start_state(blueprints_part1[index])
+        x_24 = find_max(start, 24)
+        print("x_24:", x_24)
+        result_part1 += (index + 1) * x_24
 
-    minutes = 24
-    result = 0
-    index = 0
-    for bp in blueprints[1:]:
-        index += 1
-        print(bp)
-        max_useful = (
-            max([cost[0] for (_, cost) in bp]),
-            max([cost[1] for (_, cost) in bp]),
-            max([cost[2] for (_, cost) in bp]),
-            math.inf  # you can never have too many geodes robots :)
-        )
-        start = State(bp, max_useful, (0,0,0,0), (1,0,0,0)) # blueprints[0] gives 9, blueprints[1] gives 12
+    result_part2 = 1
+    for blueprint in blueprints_part2:
+        start = get_start_state(blueprint)
         find_max.cache_clear()
-        x = find_max(start, minutes)
-        result += x * index
-        print(x, x[0] if type(x) == tuple else "", "geodes")
-        # print(count)
-    print("result", result)
+        x_32 = find_max(start, 32)
+        print("x_32:", x_32)
+        result_part2 = result_part2 * x_32
+
+    print(f"part1 {filename}: {result_part1}")
+    print(f"part2 {filename}: {result_part2}")
     print(f"=== {time.time() - start_time} seconds ===")
 
-# part1: small.in 33
-# part1: big.in 1092
-
+# part1: small.in 9*1 + 12*2 = 33
+# part2: small.in 3472
+# 80 seconds
+#
+# part1: big.in   1092
+# part2: big.in   3542
+# 17 seconds
 if __name__ == "__main__":
     main()
