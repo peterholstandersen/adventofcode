@@ -72,10 +72,7 @@ def calculate_time_needed1(need, robot_count):
         return 0
     if robot_count == 0:
         return math.inf
-    time = need // robot_count
-    if need % robot_count != 0:
-        time = time + 1
-    return time
+    return math.ceil(need / robot_count)
 
 # time needed until you have all the needed resources, 0 if you have them all
 def calculate_time_needed(state, needs):
@@ -110,16 +107,17 @@ def find_max(state, time_left):
 
     max_value = -1
     built_something = False
+    # Branch out for each robot we can (and want to) build
     for i in range(0, len(state.blueprint)):
         (robot, cost) = (state.blueprint[i][0], state.blueprint[i][1])
         # No point in building another if we already have the amount we can use
         if state.robots[i] >= state.max_useful_robots[i]:
             continue
-        # Time needed to have enough resources to build the robot
+        # Time needed to have enough resources to build the robot, 0 if we can build it now
         time_needed = calculate_time_needed(state, cost)
         if time_left > time_needed:
             built_something = True
-            # The new robot will not be productive till the round after it has been built
+            # The new robot will be productive the round after it has been built
             new_resources = add(state.resources, mult(time_needed + 1, state.robots))
             new_resources = subtract(new_resources, cost)
             new_robots = add(state.robots, robot)
@@ -140,7 +138,7 @@ def find_max(state, time_left):
 def get_start_state(blueprint):
     # Maximum number of useful robots.
     # There is no point in producing more resources than we can spend in one round.
-    max_useful =(
+    max_useful = (
         max([cost[0] for (_, cost) in blueprint]),
         max([cost[1] for (_, cost) in blueprint]),
         max([cost[2] for (_, cost) in blueprint]),
@@ -150,8 +148,8 @@ def get_start_state(blueprint):
     return State(blueprint, max_useful, (0, 0, 0, 0), (1, 0, 0, 0))
 
 def main():
-    # filename = "small.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1
-    filename = "big.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1[0:3]
+    filename = "small.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1
+    # filename = "big.in"; blueprints_part1 = read_input(filename); blueprints_part2 = blueprints_part1[0:3]
     start_time = time.time()
     result_part1 = 0
     for index in range(len(blueprints_part1)):
@@ -179,6 +177,6 @@ def main():
 #
 # part1: big.in   1092
 # part2: big.in   3542
-# 16 seconds
+# 15 seconds
 if __name__ == "__main__":
     main()
