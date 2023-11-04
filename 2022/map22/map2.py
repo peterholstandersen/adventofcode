@@ -1,14 +1,8 @@
 import sys
 
-from map import read_file, error, ANSI
+from map import read_file, error, ANSI, right, left, up, down
 
-
-# def process_map(field_txt, field, height, width, gridsize):
-#    [ print(f"({line:>3},{col:>3})  {field.get( (line, col), 'x')}") for line in range(1, height + 1, gridsize) for col in range(1, width + 1, gridsize) ]
-#    assert(len([ (line, col) for line in range(1, height + 1, gridsize) for col in range(1, width + 1, gridsize) if (line, col) in field ]) == 6)
-
-
-dice_not_used_for_now_remove_later = {
+dice_not_used_for_now_remove_later_or_use_this_instead_of_corners_yes_I_think_so = {
     # A mapping of connecting sides, seen clockwise from above: top, right, bottom, left.
     # Opposing sides are not included in the lists as they are not connected. The lists are
     # rotated after the input file is read (the order is preserved), so that know how there
@@ -39,10 +33,12 @@ top_right = 1
 bottom_right = 2
 bottom_left = 3
 
+facing_char = {right: ">", left: "<", up: "^", down: "v"}
+
 class Dice:
     def __init__(self, number, line, col):
         self.number = number
-        self.line = line
+        self.line = line # anchor
         self.col = col
         self.corners = corners[number].copy()
 
@@ -97,7 +93,7 @@ class Layout():
         for die in self.layout.values():
             if die.line == line and die.col == col:
                 return die.number
-        return "x"
+        error(f"layout: Unable to find die at ({line}, {col})")
 
     def check_integrity(self):
         # maybe
@@ -106,7 +102,22 @@ class Layout():
     def __str__(self):
         return f"Layout({','.join(map(str, self.layout.values()))}"
 
-def another_try(field, height, width, gridsize):
+def print_layout(field, layout, height, width):
+    print(layout)
+    print("              1       ")
+    print("    012345678901234567")
+    for line in range(0, height + 2):
+        print(f"{line:>2}: ", end="")
+        for col in range(0, width + 2):
+            if False and (line, col) in field:
+                number = layout.get_die(line, col)
+                print(number, end="")
+            else:
+                print(field.get((line, col), ANSI.green + "#" + ANSI.reset), end="")
+        print("")
+
+
+def determine_layout(field, height, width, gridsize):
     up = lambda line, col: (line - gridsize, col)
     down = lambda line, col: (line + gridsize, col)
     left = lambda line, col: (line, col - gridsize)
@@ -150,25 +161,112 @@ def another_try(field, height, width, gridsize):
         layout.check_integrity()
         worklist.extend(get_worklist_extension(new_dice))
 
-    print(layout)
+    # print_layout(field, layout, height, width)
+    return layout
 
-    print("              1       ")
-    print("    012345678901234567")
+def move_ahead(layout, field, line, col, facing):
+    (new_line, new_col) = facing(line, col)
+    if (new_line, new_col) in field:
+        if field[(new_line, new_col)] == "#":
+            return (line, col, facing)
+        else:
+            return (new_line, new_col, facing)
+    # we are off the map: here be dragons
+    from_die = layout.get_die(line, col)
+    from_die_obj = layout.layout[from_die]
+    print(f"we are off the map: from=#{from_die}({line},{col}) to ({new_line},{new_col})")
+    if facing == up: to_die = from_die_obj.get_up()
+    elif facing == right: to_die = from_die_obj.get_right()
+    elif facing == down: to_die = from_die_obj.get_down()
+    elif facing == left: to_die = from_die_obj.get_left()
+    else: error("!?")
+    assert(from_die != to_die)
+    to_die_obj = layout.layout[to_die]
 
-    for line in range(0, height + 2):
-        print(f"{line:>2}: ", end="")
-        for col in range(0, width + 2):
-            if (line, col) in field:
-                number = layout.get_die(line, col)
-                print(number, end="")
-            else:
-                print(field.get( (line, col), ANSI.green + "#" + ANSI.reset), end="")
-        print("")
+    if facing == up: out_side = "top"
+    elif facing == right: out_side = "right"
+    elif facing == down: out_side = "bottom"
+    elif facing == left: out_side = "left"
+    else: error("?")
+
+    if to_die_obj.get_up() == from_die: in_side = "top"
+    elif to_die_obj.get_right() == from_die: in_side = "right"
+    elif to_die_obj.get_down() == from_die: in_side = "bottom"
+    elif to_die_obj.get_left() == from_die: in_side = "left"
+    else: error("!")
+
+    gridsize = layout.gridsize
+
+    # works on coordinates relative to the die anchor
+    top_to_top    = lambda line, col: (0, gridsize - col, down)
+    top_to_right  = lambda line, col: (gridsize - col, gridsize - 1, left)
+    top_to_left   = lambda line, col: (col, 0, right)
+    top_to_bottom = lambda line, col: (gridsize - 1, col, up)  # don't think this will happen
+
+    bottom_to_top    = lambda line, col: (0, col, down)        # nor this one
+    bottom_to_right  = lambda line, col: (col, gridsize - 1, left)
+    bottom_to_bottom = lambda line, col: (gridsize - 1, layout.gridsize - 1 - col, up)
+    bottom_to_left   = lambda line, col: (gridsize - 1, 0, right)
+
+    left_to_top    = lambda line, col: (0, line, down)
+    left_to_right  = lambda line, col: (line, gridsize - 1, left)
+    left_to_bottom = lambda line, col: (gridsize - 1, gridsize -1 - col, up)
+    left_to_left   = lambda line, col: (gridsize - 1 - line, 0, right)
+
+    right_to_top    = lambda line, col: (0, gridsize - 1 - line, down)
+    right_to_right  = lambda line, col: (gridsize - 1 - line, gridsize - 1, left)
+    right_to_bottom = lambda line, col: (gridsize - 1, line, up)
+    right_to_left   = lambda line, col: (line, 0, right)
+
+    # line_from_die, col_from_die are relative to from_die's anchor (in range 0 to (gridsize-1) inclusive)
+    line_from_die = line - from_die_obj.line
+    col_from_die = col - from_die_obj.col
+
+    # line_to_die, col_to_die are relative to to_die's anchor
+    print(f"leaving #{from_die}({line_from_die},{col_from_die},out_side={out_side},facing={facing}), entering {to_die}(in_side={in_side})")
+    (line_to_die, col_to_die, new_facing) = eval(out_side + "_to_" + in_side)(line_from_die, col_from_die)
+    print(f"now in #{to_die}({line_to_die},{col_to_die},facing={new_facing}) ... map({line_to_die + to_die_obj.line},{col_to_die + to_die_obj.col})")
+    new_line = line_to_die + to_die_obj.line
+    new_col = col_to_die + to_die_obj.col
+    if field[(new_line,new_col)] == "#":
+        return (line, col, facing)
+    else:
+        return (line_to_die + to_die_obj.line, col_to_die + to_die_obj.col, new_facing)
+
+def move_it(layout, field, commands):
+    facing = right
+    line = 1
+    col = 1
+    while (line, col) not in field:
+        col = col + 1
+    field[(line, col)] = facing_char[facing]
+    for command in commands:
+        match command:
+            case 'M': (line, col, facing) = move_ahead(layout, field, line, col, facing)
+            case 'R': facing = { up: right, right: down, down: left, left: up}[facing]
+            case 'L': facing = { up: left, left: down, down: right, right: up}[facing]
+            case _: error("bleh")
+        field[(line, col)] = facing_char[facing]
+    print("done")
+    return (field, line, col, facing)
 
 def main():
-    filename = "small.in"
+    filename = "big.in"
     (field_txt, field, commands, height, width) = read_file(filename)
-    another_try(field, height, width, 4 if filename == "small.in" else 50)
+    layout = determine_layout(field, height, width, 4 if filename == "small.in" else 50)
+    (_, line, col, facing) = move_it(layout, field, commands)
+
+    print_layout(field, layout, height, width)
+
+    #  Facing is 0 for right (>), 1 for down (v), 2 for left (<), and 3 for up (^).
+
+    facing_number = {right: 0, down: 1, left: 2, up: 3}
+    result = 1000 * line + 4 * col + facing_number[facing]
+
+    print(line, col, facing_char[facing], result)
+
+
+# big.in: 197 11 ^ 197047
 
 if __name__ == "__main__":
     main()
