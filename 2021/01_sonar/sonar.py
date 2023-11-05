@@ -45,6 +45,12 @@ def part1(filename, result):
     print("part1:", filename, increases)
     assert(increases == result)
 
+def part1a(filename, result):
+    xs = list(map(int, open(filename).read().strip("\n").split("\n")))
+    increases = len([(x,y) for (x,y) in zip(xs, xs[1:]) if x < y])
+    print("part1:", filename, increases)
+    assert(increases == result)
+
 def part2(filename, result):
     xs = map(int, open(filename).read().strip("\n").split("\n"))
     ys = [a + b + c for (a, b, c) in triplets(xs)]
@@ -52,7 +58,14 @@ def part2(filename, result):
     print("part2:", filename, increases)
     assert(increases == result)
 
-part1("small.in", 7)
-part1("big.in", 1121)
-part2("small.in", 5)
-part2("big.in", 1065)
+def part2b(filename, result):
+    xs = list(map(int, open(filename).read().strip("\n").split("\n")))
+    ys = [a + b + c for (a, b, c) in zip(xs, xs[1:], xs[2:])]
+    increases = len([(x, y) for (x, y) in zip(ys, ys[1:]) if x < y])
+    print("part2:", filename, increases)
+    assert(increases == result)
+
+part1a("small.in", 7)
+part1a("big.in", 1121)
+part2b("small.in", 5)
+part2b("big.in", 1065)
