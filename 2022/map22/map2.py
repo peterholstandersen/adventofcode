@@ -1,12 +1,53 @@
-from map import read_file, error, ANSI, right, left, up, down
 from functools import cache
+from typing import Self
+from map import read_file, error, ANSI, right, left, up, down
 
-(TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT) = (0, 1, 2, 3)   # indices
+# Puzzle: https://adventofcode.com/2022/day/22, part 2
+#
+# Algorithm:
+#
+# The cube is modelled after real dice, where the opposing sides are 1-6, 3-4, 2-5. The corners on the dice
+# are defined as the three sides it connects.
+#
+# Read the map from the input file and make a sparse representation of it: field[(line,col)] = char. I use the
+# words "map" and "field" interchangably in the comments. Next, identify the blocks on the map. Each block
+# corresponds to a side on the dice. The gridsize of the blocks are given: 4x4 for small.in and 50x50 for big.in.
+#
+# In general, we define the first block as side 1 of the dice with the default orientation: 3 is upwards, 2 is
+# to the right, 4 is down, and 5 is to the left. Note, that we do not know yet whether there is anything on the
+# map in either direction. This is indicated by the parenthesis:
+#    (3)
+# (5)-1-(2)
+#    (4)
+#
+# Then, we look for neighbouring blocks on the map. Say, we only find a block below, it must be a 4 in order for
+# it to match the orientation of 1. We rotate 4 so that 1 is above it. After 4 has been rotated, 5 must be left
+# of 4, 2 must be to the right, and 6 below according to the definition of the corners. In this example, we did
+# not find any other blocks next to 1, so we can forget about the (3), (2) and (5) from above. The layout so far,
+# where (2), (5), (6) indicate potential neighbours to 4.
+#     1
+# (5)-4-(2)
+#    (6)
+#
+# When we have found all 6 blocks on the map and rotated them so that they all align, we have our final layout.
+# For example for "small.in":
+#    1
+#  354
+#    62
+#
+# Sine we know the orientation of all sides and know which side is connected to which, we know that when we go
+# upwards from 1 we shall enter 3. If we leave 5 from the top side, we shall enter 1 from the left side. This
+# way we can find the new position on the map when we leave it somewhere and also the new direction to continue
+# in.
+
+# Dice the code below, should generally be called Side!
+
+(TOP_LEFT, TOP_RIGHT, BOTTOM_RIGHT, BOTTOM_LEFT) = (0, 1, 2, 3)    # indices into the list below
 corners = {
-    # top-left, top-right, bottom-right, bottom-left clockwise. Will be rotated later. Order must be preserved.
-    # Integrity check: The number itself nor the opppsing side (7 - number) may be in the list.
-    # Having the number itself is redundant on purpose. This allows us to compare two corners from different lists
-    # provided the numbers in a corner definition are sorted.
+    # The 4 corners for each side on the dice. The order of the corners in the list defines the  orientation of the
+    # side: they are listed clockwise starting from the top-left: top-left, top-right, bottom-right, bottom-left.
+    # On purpose, the number itself is included in the defition of a corner. This will make it easier to compare two
+    # corners from different lists since the numbers are sorted.
     1: [ (1,3,5), (1,2,3), (1,2,4), (1,4,5) ],
     2: [ (1,2,3), (2,3,6), (2,4,6), (1,2,4) ],
     3: [ (1,2,3), (1,3,5), (3,5,6), (2,3,6) ],
@@ -23,16 +64,25 @@ class Dice:
         self.corners = corners[number].copy()
 
     @cache
-    def _get_it(self, corner1, corner2):
+    def _get_common(self, corner1, corner2):
         # Find the common dice number between corner1 and corner2 (excluding self)
         xs = set(self.corners[corner1]).intersection(self.corners[corner2]) - {self.number}
         assert(len(xs) == 1)
         return xs.pop()
 
-    def get_up(self):     return self._get_it(TOP_LEFT, TOP_RIGHT)
-    def get_down(self):   return self._get_it(BOTTOM_LEFT, BOTTOM_RIGHT)
-    def get_right(self):  return self._get_it(TOP_RIGHT, BOTTOM_RIGHT)
-    def get_left(self):   return self._get_it(TOP_LEFT, BOTTOM_LEFT)
+    def get_up(self):     return self._get_common(TOP_LEFT, TOP_RIGHT)
+    def get_down(self):   return self._get_common(BOTTOM_LEFT, BOTTOM_RIGHT)
+    def get_right(self):  return self._get_common(TOP_RIGHT, BOTTOM_RIGHT)
+    def get_left(self):   return self._get_common(TOP_LEFT, BOTTOM_LEFT)
+
+    def get_to_dice(self, layout, direction):
+        # Get the dice we are moving into
+        if direction == up: to_dice = self.get_up()
+        elif direction == down: to_dice = self.get_down()
+        elif direction == right: to_dice = self.get_right()
+        elif direction == left: to_dice = self.get_left()
+        else: error("Unable to get_to_dice")
+        return layout.layout[to_dice]
 
     def align(self, other):
         # Rotate the dice until it is aligned with the other dice. When a pair of corners match, they are aligned.
@@ -61,7 +111,7 @@ class Layout():
             error(f"layout: dice {dice.number} is already defined")
         self.layout[dice.number] = dice
 
-    def get_dice(self, line, col):
+    def get_dice(self, line: int, col: int) -> Dice:
         # get top-left corner of the block
         # line, col is the absolute position on the map starting at (1,1)
         line = line - 1
@@ -70,7 +120,7 @@ class Layout():
         anchor_col = col - (col % self.gridsize) + 1
         for dice in self.layout.values():
             if dice.line == anchor_line and dice.col == anchor_col:
-                return dice.number
+                return dice
         error(f"layout: Unable to find dice at ({line},{col})")
 
     def __str__(self):
@@ -81,7 +131,7 @@ def print_layout(field, layout, height, width):
         print(f"{line:>2}: ", end="")
         for col in range(0, width + 2):
             if False and (line, col) in field:
-                number = layout.get_dice(line, col)
+                number = layout.get_dice(line, col).number
                 print(number, end="")
             else:
                 print(field.get((line, col), ANSI.green + "#" + ANSI.reset), end="")
@@ -136,14 +186,7 @@ def move_ahead(layout, field, line, col, facing):
             return (new_line, new_col, facing)
     # we are off the map: here be dragons
     from_dice = layout.get_dice(line, col)
-    from_dice_obj = layout.layout[from_dice]
-    if facing == up: to_dice = from_dice_obj.get_up()
-    elif facing == right: to_dice = from_dice_obj.get_right()
-    elif facing == down: to_dice = from_dice_obj.get_down()
-    elif facing == left: to_dice = from_dice_obj.get_left()
-    else: error("!?")
-    assert(from_dice != to_dice)
-    to_dice_obj = layout.layout[to_dice]
+    to_dice = from_dice.get_to_dice(layout, facing)
 
     if facing == up: out_side = "top"
     elif facing == right: out_side = "right"
@@ -151,50 +194,49 @@ def move_ahead(layout, field, line, col, facing):
     elif facing == left: out_side = "left"
     else: error("?")
 
-    if to_dice_obj.get_up() == from_dice: in_side = "top"
-    elif to_dice_obj.get_right() == from_dice: in_side = "right"
-    elif to_dice_obj.get_down() == from_dice: in_side = "bottom"
-    elif to_dice_obj.get_left() == from_dice: in_side = "left"
+    if to_dice.get_up() == from_dice.number: in_side = "top"
+    elif to_dice.get_right() == from_dice.number: in_side = "right"
+    elif to_dice.get_down() == from_dice.number: in_side = "bottom"
+    elif to_dice.get_left() == from_dice.number: in_side = "left"
     else: error("!")
 
     last = layout.gridsize - 1      # last column / last line
     reverse = lambda x: last - x    # works for columns and line both
 
-    # works on coordinates relative to the dice anchor
+    # Functions for determining the new line, column, and facing when leaving one die and entering another,
+    # where the name denotes the side of the die we leave followed by _to_ and then the side of the die we
+    # are entering. For example, right_to_top means we are leaving the right side of one die and entering
+    # the top of another. The functions work on coordinate relative to the dice anchor.
     top_to_top    = lambda line, col: (0, reverse(col), down)
-    top_to_right  = lambda line, col: (reverse(col), last, left)
-    top_to_left   = lambda line, col: (col, 0, right)
-    top_to_bottom = lambda line, col: (last, col, up)
+    right_to_top  = lambda line, col: (0, reverse(line), down)
+    bottom_to_top = lambda line, col: (0, col, down)
+    left_to_top   = lambda line, col: (0, line, down)
 
-    bottom_to_top    = lambda line, col: (0, col, down)
-    bottom_to_right  = lambda line, col: (col, last, left)
+    top_to_bottom    = lambda line, col: (last, col, up)
+    right_to_bottom  = lambda line, col: (last, line, up)
     bottom_to_bottom = lambda line, col: (last, reverse(col), up)
-    bottom_to_left   = lambda line, col: (last, 0, right)
+    left_to_bottom   = lambda line, col: (last, reverse(line), up)
 
-    left_to_top    = lambda line, col: (0, line, down)
-    left_to_right  = lambda line, col: (line, last, left)
-    left_to_bottom = lambda line, col: (last, reverse(col), up)
+    top_to_right    = lambda line, col: (reverse(col), last, left)
+    right_to_right  = lambda line, col: (reverse(line), last, left)
+    bottom_to_right = lambda line, col: (col, last, left)
+    left_to_right   = lambda line, col: (line, last, left)
+
+    top_to_left    = lambda line, col: (col, 0, right)
+    right_to_left  = lambda line, col: (line, 0, right)
+    bottom_to_left = lambda line, col: (reverse(col), 0, right)
     left_to_left   = lambda line, col: (reverse(line), 0, right)
 
-    right_to_top    = lambda line, col: (0, reverse(line), down)
-    right_to_right  = lambda line, col: (reverse(line), last, left)
-    right_to_bottom = lambda line, col: (last, line, up)
-    right_to_left   = lambda line, col: (line, 0, right)
-
     # line_from_dice, col_from_dice are relative to from_dice's anchor (in range 0 to (gridsize-1) inclusive)
-    line_from_dice = line - from_dice_obj.line
-    col_from_dice = col - from_dice_obj.col
-
-    # line_to_dice, col_to_dice are relative to to_dice's anchor
-    # print(f"leaving #{from_dice}({line_from_dice},{col_from_dice},out_side={out_side},facing={facing}), entering {to_dice}(in_side={in_side})")
+    line_from_dice = line - from_dice.line
+    col_from_dice = col - from_dice.col
     (line_to_dice, col_to_dice, new_facing) = eval(out_side + "_to_" + in_side)(line_from_dice, col_from_dice)
-    # print(f"now in #{to_dice}({line_to_dice},{col_to_dice},facing={new_facing}) ... map({line_to_dice + to_dice_obj.line},{col_to_dice + to_dice_obj.col})")
-    new_line = line_to_dice + to_dice_obj.line
-    new_col = col_to_dice + to_dice_obj.col
+    new_line = line_to_dice + to_dice.line
+    new_col = col_to_dice + to_dice.col
     if field[(new_line,new_col)] == "#":
         return (line, col, facing)
     else:
-        return (line_to_dice + to_dice_obj.line, col_to_dice + to_dice_obj.col, new_facing)
+        return (line_to_dice + to_dice.line, col_to_dice + to_dice.col, new_facing)
 
 def move_it(layout, field, commands):
     facing_char = {right: ">", left: "<", up: "^", down: "v"}
