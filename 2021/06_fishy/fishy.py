@@ -21,6 +21,8 @@ assert(len(xs) == part1)
 xs = xs_copy
 fish = [xs.count(n) for n in range(9)]
 for i in range(256):
+    # indices in the new list:
+    #      0-6           6                  7        8
     fish = fish[1:7] + [ fish[7] + fish[0], fish[8], fish[0] ]
 print("part2", dataset, sum(fish), "fishseses")
 assert(sum(fish) == part2)
