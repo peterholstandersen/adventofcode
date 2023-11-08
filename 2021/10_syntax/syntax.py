@@ -1,3 +1,4 @@
+import sys
 from utils import Timer
 from statistics import median
 
@@ -26,6 +27,38 @@ def ok(match, text):
             return (value[text[0]], [])
     print("illegal char", text[0])
 
+def ok2(text: str, expect: str):
+    if len(text) == 0:
+        return "ok" if len(expect) == 0 else "premature eol, expected '"+ expect + "'"
+    if text[0] in "([{>":
+        return ok2(text[1:], open2close[text[0]] + expect)
+    if text[0] in ")]{<":
+        if len(expect) == 0:
+            return "expected eol, found '" + text[0] + "'"
+        else:
+            return "expected '" + expect[0] + "', found '" + text[0] + "'" if text[0] != expect[0] else ok2(text[1:], expect[1:])
+    print("illegal char", t0)
+
+def ok3(text, expect):
+    # print(text, expect)
+    match (text, expect):
+        case (["$"], ["$"]):                return "ok"
+        case (["(", *rest], _):             return ok3(rest, [")"] + expect)
+        case (["[", *rest], _):             return ok3(rest, ["]"] + expect)
+        case (["{", *rest], _):             return ok3(rest, ["}"] + expect)
+        case (["<", *rest], _):             return ok3(rest, [">"] + expect)
+        case ([X, *rest1], [Y, *rest2]):    return ok3(rest1, rest2) if X == Y else f"expected {''.join(expect)}, found {''.join(text)}"
+        case _:                             return "should not happen"
+    print("hej")
+
+#print(ok3(list("()$"), list("$")))
+#sys.exit(1)
+
+def ok4(text, expect):
+    print("ok4:", text, expect)
+    if text[0] in "(]{<":
+        return ok4(text[1:], [ open2close[text[0]] ] + expect)
+    return ok4(text[1:], expect[1:]) if text[0] == expect[0] else "expected " + str(expect) + " found " + str(text)
 
 def part1(filename, expected):
     lines = open(filename).read().strip().split("\n")
@@ -57,7 +90,10 @@ def part2(filename, expected):
     assert (result == expected)
 
 if __name__ == "__main__":
-    part1("small.in", 26397)
-    part1("big.in", 319329)
-    part2("small.in", 288957)
-    part2("big.in", 3515583998)
+    for x in ["()", "())", "(())", "(((((())", "(]"]:
+        print(x, ok3(list(x + "$"), list("$")))
+
+    #part1("small.in", 26397)
+    #part1("big.in", 319329)
+    #part2("small.in", 288957)
+    #part2("big.in", 3515583998)
