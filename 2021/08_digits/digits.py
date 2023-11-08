@@ -45,7 +45,7 @@ digits = {
     "abcdfg": '9',
 }
 
-# Count the number of easy identifable output signals, that is, the ones of length 2, 3, 4 and 7 corresponding to the
+# Count the number of easily identifable output signals, that is, the ones of length 2, 3, 4 and 7 corresponding to the
 # digits 1, 7, 4, and 8
 def part1(filename, result):
     # mumbo jumbo
