@@ -45,7 +45,8 @@ digits = {
     "abcdfg": '9',
 }
 
-# Count the number of unique signals, i.e., the ones of length 2, 3, 4 and 7 corresponding to the digits 1, 7, 4, and 8
+# Count the number of easy identifable output signals, that is, the ones of length 2, 3, 4 and 7 corresponding to the
+# digits 1, 7, 4, and 8
 def part1(filename, result):
     # mumbo jumbo
     xs = list(map(len, (' '.join([x.split("|")[1].strip() for x in open(filename).read().strip().split("\n")])).split(" ")))
@@ -66,7 +67,8 @@ def part2(filename, expected):
         one =   [s for s in garbled_signals if len(s) == 2][0]
         seven = [s for s in garbled_signals if len(s) == 3][0]
         wire_a = ord([segment for segment in seven if segment not in one][0]) - ord('a')
-        # Find a wiring that converts all garbled signals into valid digits
+        # Find a wiring that converts all garbled signals into valid digits. There is only one that works.
+        # wiring[x - org('a')] = y means that wire y is wired to x.
         for wiring in permutations("abcdefg", 7):
             if wiring[wire_a] == 'a' and all((get_digit(signal, wiring) for signal in garbled_signals)):
                 break
