@@ -1,5 +1,6 @@
 import sys
 import time
+import re
 from itertools import permutations
 
 class Timer:
@@ -44,52 +45,41 @@ digits = {
     "abcdfg": '9',
 }
 
+# Count the number of unique signals, i.e., the ones of length 2, 3, 4 and 7 corresponding to the digits 1, 7, 4, and 8
 def part1(filename, result):
-        xs = list(map(len, (' '.join([x.split("|")[1].strip() for x in open(filename).read().strip().split("\n")])).split(" ")))
-        count = xs.count(2) + xs.count(3) + xs.count(7) + xs.count(4)
-        print("part1", filename, count)
-        assert(count == result)
+    # mumbo jumbo
+    xs = list(map(len, (' '.join([x.split("|")[1].strip() for x in open(filename).read().strip().split("\n")])).split(" ")))
+    count = xs.count(2) + xs.count(3) + xs.count(4) + xs.count(7)
+    print("part1", filename, count)
+    assert(count == result)
 
-def get_digit(sequence, wiring):
-    seq = ''.join(sorted([wiring[ord(a) - ord('a')] for a in sequence]))
-    return digits.get(seq, None)
-
-def get_len(n, signals):
-    return [signal for signal in signals if len(signal) == n][0]
+def get_digit(garbled_signal, wiring):
+    ungarbled = ''.join(sorted([wiring[ord(segment) - ord('a')] for segment in garbled_signal]))
+    return digits.get(ungarbled, None)
 
 def part2(filename, expected):
-    ys = [ line.strip().split(" | ") for line in open(filename).read().strip().split("\n") ]
-    xs = [ (xy[0].strip().split(" "), xy[1].strip().split(" ")) for xy in ys ]
-    added = 0
-    count = 0
-    for (signals, output) in xs:
-        seven = get_len(3, signals)
-        one = get_len(2, signals)
-        wire_a = ord([x for x in seven if x not in one][0]) - ord('a')  # from 500865 iteratons (5 sec) to 71667 (<1 sec)
-        ok = False
-        for ungarble in permutations("abcdefg", 7):
-            if ungarble[wire_a] != 'a':
-                continue
-            count += 1
-            result = [ get_digit(sequence, ungarble) for sequence in signals ]
-            if all(result):
-                ok = True
+    lines = [re.findall(r"([a-z]+)", line) for line in open(filename).read().strip().split("\n")]  # list of all signals
+    total = 0
+    for garbled_signals in lines:
+        # We fix one wire to get the running time <1 sec; the one that appears in 7, but not in 1 must be segment 'a'.
+        # 7 is only one with 3 segments, 1 is the only one with 2 segments
+        one =   [s for s in garbled_signals if len(s) == 2][0]
+        seven = [s for s in garbled_signals if len(s) == 3][0]
+        wire_a = ord([segment for segment in seven if segment not in one][0]) - ord('a')
+        # Find a wiring that converts all garbled signals into valid digits
+        for wiring in permutations("abcdefg", 7):
+            if wiring[wire_a] == 'a' and all((get_digit(signal, wiring) for signal in garbled_signals)):
                 break
-        if not ok:
-            print("error")
-            sys.exit(1)
-        foo = int(''.join([ get_digit(ooo, ungarble) for ooo in output]))
-        added += foo
-    print("part2", filename, added)
-    print(count)
-    assert(added == expected)
+        assert(wiring is not None)
+        total += int(''.join([ get_digit(output_signals, wiring) for output_signals in garbled_signals[-4:]]))
+    print("part2", filename, total)
+    assert(total == expected)
 
 def main():
-    part1("small.in", 26)
-    part1("big.in", 488)
     with Timer():
+        part1("small.in", 26)
+        part1("big.in", 488)
         part2("small.in", 61229)
-    with Timer():
         part2("big.in", 1040429)
 
 if __name__ == "__main__":
