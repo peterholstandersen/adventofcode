@@ -35,18 +35,18 @@ def part2(filename, expected):
     for _ in range(40):
         new_elements = counter.copy()
         # The polymer contains N = counter[XY] pairs for each XY pair.
-        # When we use the rule XY -> Z, it is turned into XZY.
-        # XZY corresponds to the two pairs XZ and ZY.
-        # The old pairs no longer appear in the polymer, although others may be created from other rules,
-        # but these particular pairs are gone. Therefore, we reduce the count of the old pair with N, and
-        # increase the count of XZ and ZY with N.
+        # Using the rule XY -> Z, it is turned into XZY corresponding to the two pairs XZ and ZY.
+        # The old pairs no longer appear in the polymer. Others may be created from other rules, but
+        # these particular instances are gone. Therefore, we reduce the count of the old pair with N,
+        # and increase the count of XZ and ZY with N each.
         for pp in counter:
             new_elements[pp] -= counter[pp]
             new_elements[pp[0] + rules[pp]] += counter[pp]
             new_elements[rules[pp] + pp[1]] += counter[pp]
         counter = new_elements
-    # Create a new counter with only the first letter of each pair. This covers all letters except the
-    # very last. The last letter is always the last of the starting polymer.
+    # We are done: Create a new counter with only the first letter of each pair. This covers all
+    # letters except the very last. The last letter is always the same as the last of the starting
+    # polymer.
     letters = Counter()
     for (pp, y) in counter.most_common():
         letters[pp[0][0]] += y
