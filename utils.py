@@ -21,18 +21,24 @@ class Map():
             self.rows = [ row for row in range(1, self.height + 1) ]
             self.cols = [ col for col in range(1, self.width + 1)]
             self._all = [(row, col) for row in self.rows for col in self.cols]
-            self._map = {(row, col): int(self.text[(row - 1) * self.width + (col - 1)]) for (row, col) in self._all}
+            self._map = {(row, col): self.text[(row - 1) * self.width + (col - 1)] for (row, col) in self._all}
 
     def all(self):
         return (item for item in self._map.items())
 
     def __getitem__(self, pos):
-        return self._map[pos]
+        return self._map.get(pos, None)
+
+    def __setitem__(self, pos, value):
+        self._map[pos] = value
+
+    def __contains__(self, pos):
+        return pos in self._map
 
     def get_neighbours(self, pos, diagonal=False):
         (row, col) = pos
         rc = [(-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1)] if diagonal else [(-1,0), (1,0), (0,-1), (0,1)]
-        return [(row + r, col + c) for (r, c) in rc if (row + r, col + c) in self._map]
+        return ((row + r, col + c) for (r, c) in rc if (row + r, col + c) in self._map)
 
     def get_some(self, condition):
         return {pos for pos in self._map if condition(self._map[pos])}
@@ -42,7 +48,7 @@ class Map():
             self._map[pos] = f(self._map[pos])
 
     def __str__(self):
-        f = lambda x: str(9 if x > 9 else x)
+        f = lambda x: x
         return '\n'.join([ ''.join([f(self._map[(row, col)]) for col in self.cols]) for row in self.rows])
 
 
