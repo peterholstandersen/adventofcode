@@ -22,13 +22,12 @@ countAdjacent1 x xs =
 anyDoubleDigits :: String -> Bool
 anyDoubleDigits xs = any (\x -> countAdjacent x xs >= 2) ['1'..'9']
 
--- true if there are any digits doubles, which are not triple or more
+-- true if there are any double digits, which are not triple or more
 anyExactlyDoubleDigits :: String -> Bool
 anyExactlyDoubleDigits xs = any (\x -> countAdjacent x xs == 2) ['1'..'9']
 
-
 -- generate all passwords between low and high where the digits in the number
--- does not decrease, e.g., 1234, 1457, 7777, 7778, 7788. Not: 1121, 1197
+-- never decrease, e.g., 1234, 1457, 7777, 7778, 7788. Not: 1121, 1197
 passwords :: String -> String -> [String]
 passwords low high = filter (\x -> low <= x && x <= high) $ passwords1 low high
 
@@ -39,7 +38,6 @@ passwords1 xs ys   = [ a ++ [b]
                      , b <- [(last a)..'9']
                      ]
 
-
 -- part1: count the number of passwords (numbers) in range 152085 670283 that
 -- . is a six-digit number.
 -- . two adjacent digits are the same (like 22 in 122345).
@@ -47,9 +45,9 @@ passwords1 xs ys   = [ a ++ [b]
 
 -- part2: count the number of passwords (numbers) in range 152085 670283 that
 -- . as part1, only the two adjacent digits may not be part of larger group
--- . 112345 is ok: 11 qualifies
--- . 111345 is ok: 111 does not qualify (most be exactly 2 adjacent digits)
--- . 111335 is ok: 111 does not qualify, but 33 does
+-- . 112345 is ok:     11 qualifies
+-- . 111345 is not ok: 111 does not qualify (most be exactly 2 adjacent digits)
+-- . 111335 is ok:     111 does not qualify, but 33 does
 
 test :: IO ()
 test = do
