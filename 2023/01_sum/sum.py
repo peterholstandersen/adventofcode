@@ -2,7 +2,9 @@ import re
 import sys
 from typing import List
 
-# part1: add find first (x) times 10 and last number (y) of each line (10*x + y). Compute sum of all numbers in file.
+# part1:
+# - find the first (x) and last digit (y) of each line, and compute the value 10*x + y. E.g., foo1bar2biz equals 12.
+# - compute the sum of all values in the file.
 
 def add_first_and_last(numbers: List[str]) -> int:
     return int(numbers[0]) * 10 + int(numbers[-1])
@@ -13,7 +15,7 @@ part1 = sum(map(add_first_and_last, all_numbers))             # compute sum of a
 print(part1) # 54304
 
 
-# part2: as part1, only the words "one", "two", ..., "nine" are considered numbers too
+# part2: as part1, only the words "one", "two", ..., "nine" are considered numbers too. E.g., one2ninefoo equals 19
 
 numbers = {
     "one": "1",
@@ -29,7 +31,7 @@ numbers = {
 
 # regexp
 # - pattern: (one|two|...|nine|1|2|...|9)
-# - rpattern: (eno|owt|...|nine|1|2|...|9)
+# - rpattern: (eno|owt|...|enin|1|2|...|9)
 
 pattern = "|".join(list(numbers.keys()) + list(map(str, range(1,10))))
 rpattern = "|".join(list(map(lambda x: x[::-1], numbers.keys())) + list(map(str, range(1,10))))
