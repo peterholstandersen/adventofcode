@@ -45,11 +45,23 @@ digits = {
     "abcdfg": '9',
 }
 
+class File:
+    def __init__(self, filename):
+        self.file = open(filename)
+
+    def __iter__(self):
+        for line in self.file:
+            yield line.strip()
+        self.file.close()
+
+from itertools import chain
+flatten = lambda xs: chain.from_iterable(xs)
+
 # Count the number of easily identifable output signals, that is, the ones of length 2, 3, 4 and 7 corresponding to the
 # digits 1, 7, 4, and 8
 def part1(filename, result):
-    # mumbo jumbo
-    xs = list(map(len, (' '.join([x.split("|")[1].strip() for x in open(filename).read().strip().split("\n")])).split(" ")))
+    ys = [right.split() for [_, right] in [line.split("|") for line in File(filename)]]
+    xs = list(map(len, flatten(ys)))
     count = xs.count(2) + xs.count(3) + xs.count(4) + xs.count(7)
     print("part1", filename, count)
     assert(count == result)
