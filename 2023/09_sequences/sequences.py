@@ -1,5 +1,5 @@
 filename = "big.in"
-xss = [list(map(int, line.strip().split(" "))) for line in open(filename).read().strip().split("\n")]
+xss = [list(map(int, line.strip().split(" "))) for line in open(filename)]
 
 def next_value(xs):
     if all(map(lambda x: x == 0, xs)):
