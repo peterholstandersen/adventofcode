@@ -18,8 +18,8 @@ class Map():
             self.height = len(self.lines)
             self.width = self.text.index("\n")
             self.text = self.text.replace("\n", "")
-            self.rows = [ row for row in range(1, self.height + 1) ]
-            self.cols = [ col for col in range(1, self.width + 1)]
+            self.rows = list(range(1, self.height + 1))
+            self.cols = list(range(1, self.width + 1))
             self._all = [(row, col) for row in self.rows for col in self.cols]
             self._map = {(row, col): self.text[(row - 1) * self.width + (col - 1)] for (row, col) in self._all}
 
@@ -47,8 +47,10 @@ class Map():
         for pos in self._map:
             self._map[pos] = f(self._map[pos])
 
-    def __str__(self):
-        f = lambda x: x
+    def find(self, value):
+        return [pos for (pos, v) in self._map.items() if v == value]
+
+    def __str__(self, f=lambda x: x):
         return '\n'.join([ ''.join([f(self._map[(row, col)]) for col in self.cols]) for row in self.rows])
 
 
@@ -59,3 +61,6 @@ class ansi:
     reset = "\u001b[0m"
     reverse = "\u001b[7m"
     top = "\u001b[0;0H"
+
+from itertools import chain
+flatten = lambda xs: chain.from_iterable(xs)
