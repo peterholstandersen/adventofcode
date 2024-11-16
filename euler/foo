@@ -1,0 +1,3 @@
+If the distances are small, you can use the linearized version:  , where   is east-west distance,   is latitude (measured with zero at the equator),   is north-south distance, and   is longitude. Then the distance is                   in whatever units you used for  
+
+.
