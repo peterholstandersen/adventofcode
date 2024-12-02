@@ -6,19 +6,45 @@ import statistics as stat
 def read_coords(filename):
     return [(float(x), float(y)) for (x, y) in [line.split(" ") for line in open(filename).read().strip().split("\n")]]
 
+def closest_distance(node, nodes):
+    return min([geo_dist(node, node1) for node1 in nodes])
+
+def check_walk(name, walk):
+    dist = compute_distances_in_walk(walk)
+    dist.sort(reverse=True)
+    out = name + ": "
+    first = True
+    # print("dist", name, dist)
+
+    for n in [1,2,4,8,16,32,64,90]:
+        i = len(dist) * n // 100
+        if i >= len(dist):
+            i = len(dist) - 1
+        out += ",  " if not first else ""
+        first = False
+        out += f"{n}%: >{dist[i]:0.3}"
+    print(out)
+
 def read_it():
     nodes = read_coords("nodes")
     nodes.sort()
     node_ids = dict(zip(nodes, range(0, len(nodes) + 1)))  # mapping from (lattitude, longtitude) to id
-    walk1 = read_coords("Euler_1.txt")
-    dist1 = compute_distances_in_walk(walk1)
-    walk2 = average_walk(walk1, 3)
-    dist2 = compute_distances_in_walk(walk2)
-    print("walk1:", walk1)
-    print("walk2:", walk2)
-    print("dist2:", dist2)
-    print("dist1:", dist1)
-    return(nodes, node_ids, walk2)
+    # walk1 = read_coords("Euler_1.txt")
+    walk1 = read_coords("Euler_2.txt")
+    walk2 = list(itertools.dropwhile(lambda node: closest_distance(node, nodes) > 5.0, walk1))
+    # We would like to get the distance between each measurement below 1.66 m, as 6 km/h = 1.66 m/s
+    walk3 = average_walk(walk2, 5)
+
+    print("walk1:", len(walk1), f"{len(walk1) // 60}:{len(walk1) % 60}", walk1)
+    print("walk2:", len(walk2), f"{len(walk2) // 60}:{len(walk2) % 60}", walk1)
+
+    check_walk("walk1", walk1)
+    check_walk("walk2", walk2)
+    check_walk("walk3", walk3)
+
+    # sys.exit(1)
+
+    return(nodes, node_ids, walk3)
     # How close are the nodes?
     all_distances = [geo_dist(loc1, loc2) for (loc1, loc2) in itertools.product(nodes, nodes) if loc1 != loc2]
     all_distances.sort()
