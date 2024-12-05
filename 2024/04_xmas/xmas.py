@@ -101,8 +101,8 @@ print("part1:", part1)
 print("part2:", part2)
 
 
-# ======= List (in)comprenhensions ======
-# Hard to make a comprenhensive list comprehension of the match_pattern function ...
+# ======= List comprenhensions ======
+# Hard to make a comprenhensible list comprehension of the match_pattern function ...
 
 count_patterns_again = lambda patterns, text: [match_pattern(pattern, text, line, col)
                                                for line in range(0, len(text))
