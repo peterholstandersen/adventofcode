@@ -15,14 +15,12 @@ from collections import Counter
 file = "big.in"
 numbers = [line.strip().split("  ") for line in open(file).read().strip().split("\n")]
 
-list1 = [int(x) for (x,_) in numbers]
-list2 = [int(y) for (_,y) in numbers]
-list1.sort()
-list2.sort()
+list1 = sorted([int(x) for (x,_) in numbers])
+list2 = sorted([int(y) for (_,y) in numbers])
 part1 = sum([abs(x - y) for (x, y) in zip(list1, list2)])
 
 counter = Counter(list2)
 part2 = sum([counter[number] * number for number in list1])
 
-print("part2:", part2)
-print("part1:", part1)
+print("part1:", part1) # 1660292
+print("part2:", part2) # 22776016
