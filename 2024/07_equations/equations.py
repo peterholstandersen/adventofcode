@@ -36,14 +36,9 @@ def ok(result, numbers, operators, result_so_far):
             return True
     return False
 
-def doit2(opps):
-    final_sum = 0
-    for (result, numbers) in equations:
-        result = int(result)
-        numbers = list(map(int, numbers))
-        if ok(result, numbers, opps, 0):
-            final_sum += result
-    return final_sum
+equations = [ (int(result), list(map(int, numbers))) for (result, numbers) in equations ]
+
+doit2 = lambda operators: sum([result for (result, numbers) in equations if ok(result, numbers, operators, 0)])
 
 print("part1:", doit2((op.add, op.mul))) # 10741443549536
 print("part2:", doit2((op.add, op.mul, concatenate))) # 500335179214836 ... faster!
