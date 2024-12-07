@@ -17,19 +17,19 @@ from collections import Counter
 
 # file = "small.in"
 file = "big.in"
-reports = [list(map(int, line.strip().split(" "))) for line in open(file).read().strip().split("\n")]
+reports = [list(map(int, line.strip().split(" "))) for line in open(file)]
 
 is_safe_ascending = lambda xs: all([1 <= (x - y) <= 3 for (x, y) in zip(xs[1:], xs)])
 is_safe = lambda xs: is_safe_ascending(xs) or is_safe_ascending(list(reversed(xs)))
 part1 = list(map(is_safe, reports)).count(True)
 
-# make all lists of xs with one element removed .. including xs itself
+# generate all lists of xs with one element removed .. including xs itself
 def combinations(xs):
-    xss = [xs[:i] + xs[i+1:]  for i in range(0, len(xs))]
-    xss.append(xs)
-    return xss
+    yield xs
+    for zzz in (xs[:i] + xs[i+1:] for i in range(0, len(xs))):
+        yield zzz
 
-part2 = [any([is_safe(report1) for report1 in combinations(report)]) for report in reports].count(True)
+part2 = [any((is_safe(report1) for report1 in combinations(report))) for report in reports].count(True)
 
-print("part1:", part1)
-print("part2:", part2) # 544!
+print("part1:", part1) # 502
+print("part2:", part2) # 544
