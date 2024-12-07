@@ -14,15 +14,15 @@ mul = lambda x, y: x * y
 part1 = sum([eval(op) for op in pattern.findall(text)])
 
 pattern2 = re.compile(r"(mul\(\d\d?\d?,\d\d?\d?\))|(do\(\))|(don\'t\(\))")
-foo = [x+y+z for (x,y,z) in pattern2.findall(text)]
+sanitized = [x + y + z for (x, y, z) in pattern2.findall(text)]
 
-bleh = 1
 part2 = 0
-for f in foo:
-    match f:
-        case "don\'t()": bleh = 0
-        case "do()":     bleh = 1
-        case _:          part2 += eval(f) * bleh
+do_add = True
+for command in sanitized:
+    match command:
+        case "don\'t()": do_add = False
+        case "do()":     do_add = True
+        case _:          part2 += eval(command) if do_add else 0
 
 print("part1:", part1) # 161289189
 print("part2:", part2) # 83595109
