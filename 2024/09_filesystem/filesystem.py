@@ -1,8 +1,8 @@
 import sys
 import itertools
 
-file = "small.in"
-# file = "big.in"
+# file = "small.in"
+file = "big.in"
 filesystem = list(map(int, open(file).read().strip()))
 
 def get_next(filesystem):
@@ -38,110 +38,79 @@ def get_next(filesystem):
             free_space[space_index] -= 1
             yield file_index2
 
+part1 = sum([i*x for (i, x) in zip(itertools.count(0), get_next(filesystem))])
+print("part1:", part1)  # small: 1928, big: 6331212425418
 
+# ================= PART2 ====================
 
+# 2 3  3  3  13  3  12 14   14   13  14   02
+# 00...111...2...333.44.5555.6666.777.888899
+# ---move 99--
+# 2 0213  3  13  3  12 14   14   13  14   2
+# 0099.111...2...333.44.5555.6666.777.8888..
+# ---move 777---
+# 2 0213  03 13  3  12 14   14   5    4   2
+# 0099.1117772...333.44.5555.6666.....8888..
+# ---
+# 0099.111777244.333....5555.6666.....8888..
+# 00992111777.44.333....5555.6666.....8888..
 
-# part1 = sum([i*x for (i, x) in zip(itertools.count(0), get_next(filesystem))])
-# print("part1:", part1)  # small: 1928, big: 6331212425418
-
-def get_file(filesystem, index):
-    current_id = filesystem[index] if 0 <= index < len(filesystem) else None
-    end = index - 1
-    while end > 0 and (filesystem[end] == current_id or filesystem[end] == "."):
-        end -= 1
-    if end == -1:
-        return None
-    file_id = filesystem[end]
-    start = end
-    while start > 0 and filesystem[start] == file_id:
-        start -= 1
-    start += 1
-    return (start, end)
-
-def find_slot(filesystem, file):
-    file_size = file[1] - file[0] + 1
-    # search from left-to-right (front-to-back) for a large enough slot
-    index = 0
-    while True:
-        while index < len(filesystem) and filesystem[index] != ".":
-            index += 1
-        if index == len(filesystem):
-            return None
-        start = index
-        print("slot start:", start)
-        while index < len(filesystem) and filesystem[index] == ".":
-            index += 1
-        end = index - 1
-        slot_size = end - start + 1
-        if slot_size >= file_size:
-            return (start, end)
-    return None
-
-def move_file(filesytem, file, slot):
-    file_size = file[1] - file[0] + 1
-    file_index = file[0]
-    slot_index = slot[0]
-    for n in range(0, file_size):
-        filesystem[slot_index + n] = filesystem[file_index + n]
-        filesystem[file_index + n] = "."
-
-def doit2(filesystem):
-    while True:
-        index = len(filesystem)
-        while index > 0:
-            file = get_file(filesystem, index)
-            if not file:
-                break
-            (start, end) = file
-            print("file:", file, "".join(filesystem[start:end + 1]))
-            slot = find_slot(filesystem, file)
-            print("slot:", slot)
-            if slot:
-                move_file(filesystem, file, slot)
-                print("".join(filesystem))
-            index = file[0]
-
-# print(filesystem)
-filesystem = [ (str((index + 1) // 2) if index % 2 == 0 else ".") * filesystem[index] for index in range(0, len(filesystem)) ]
-filesystem = list("".join(filesystem))
-# print(filesystem)
-print("".join(filesystem))
-
-doit2(filesystem)
-
-sys.exit(1)
-
-
-sys.exit(1)
-
-# part2 = sum([i*x for (i, x) in zip(itertools.count(0), get_next2(filesystem))])
-# print("part2:", part2)
-
-
-
-
-
-# ==== Junk
-
-def get_next2(filesystem):
-    # every other position denotes a file size and a free space respectively
-    index1 = 0
-    index2 = len(filesystem) - 1
-    while index1 < index2:
-        if index1 % 2 == 0:
-            # print("regular file")
-            # regular file
-            yield from itertools.repeat((index1 + 1) // 2, filesystem[index1])
-            index1 += 1
+def do_part2(fs):
+    index = len(fs) - 1
+    while index > 0:
+        (file_id, file_size) = fs[index]
+        if file_id is None:
+            index -= 1
             continue
-        # print("empty space")
-        # empty space: find a file that fits, searching from the right
-        while filesystem[index2] > filesystem[index1] and index2 >= 0:
-            index2 -= 2
-        if index2 < 0:
-            break
-        yield from itertools.repeat((index2 + 1) // 2, filesystem[index2])
-        yield from itertools.repeat(".", filesystem[index1] - filesystem[index2])
-        index2 -= 2
-        index1 += 1
-    yield -1
+        found_a_space = False
+        # search the filesystem left to right for a suitable space
+        for space_index in range(0, index):
+            if fs[space_index][0] is not None:
+                # Not a space
+                continue
+            (_, space_size) = fs[space_index]
+            if space_size >= file_size:
+                found_a_space = True
+                # now "delete file", that is, chance the segment to a space.
+                # There is no need to join the segment with the spaces before and after, since we will not
+                # try to move a file here anymore, as we are handling files right to left in the filesystem
+                fs[index] = (None, file_size)
+                # "move" the file to fs[space_index] and insert the remaining space after the file
+                fs[space_index] = (file_id, file_size)
+                fs.insert(space_index + 1, (None, space_size - file_size))
+                # ... and now we have changed the list we are working on, bad dog!
+                # index is now pointing to the segment before the file, i.e., which was index - 1 before,
+                # so, we leave index unchanged ... we could decrease it by one as we "know" that the fs[index]
+                # should be a space, which will be skipped anyway, but that is also bad, bad dog!
+                break
+        if not found_a_space:
+            index -= 1
+
+def printable_id(file_id):
+    if file_id is None:
+        return "."
+    if 0 <= file_id <= 9:
+        return str(file_id)
+    return "X"
+
+def print_filesystem(filesystem):
+    print("".join([printable_id(index // 2) * filesystem[index] for index in range(0, len(filesystem))]))
+
+def print_filesystem2(fs2):
+    print("".join([printable(file_id) * size for (file_id, size) in fs2]))
+
+# Create a new filesystem with as a list of (file_id, size) where file_id = (index // 2) (spaces have no id):
+# [ file_size1, space_size1, file_size2, space_size2 ] =>
+# [ (0, file_size1), (None, space_size1), (1, file_size2), (None, space_size2) ]
+file_id = lambda index: (index // 2) if index % 2 == 0 else None
+fs2 = [ (file_id(index), filesystem[index]) for index in range(0, len(filesystem))]
+do_part2(fs2)
+
+pos = 0
+checksum = 0
+for index in range(0, len(fs2)):
+    (file_id, size) = fs2[index]
+    if file_id:
+        checksum += sum(range(pos, pos + size)) * file_id
+    pos += size
+print("part2:", checksum) # 6363268339304
