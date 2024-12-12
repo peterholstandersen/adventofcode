@@ -5,6 +5,7 @@ import itertools
 file = "big.in"
 filesystem = list(map(int, open(file).read().strip()))
 
+# probably overly complicated, but I wanted to use yield and I have not beautified it, so shoot me!
 def get_next(filesystem):
     # every other position denotes a file size and a free space respectively
     files = [filesystem[i] for i in range(0, len(filesystem), 2)]
@@ -42,6 +43,56 @@ part1 = sum([i*x for (i, x) in zip(itertools.count(0), get_next(filesystem))])
 print("part1:", part1)  # small: 1928, big: 6331212425418
 
 # ================= PART2 ====================
+
+# indices
+ID = 0
+SIZE = 1
+POSITION = 2
+
+def doit2_again(files, spaces):
+    for file_index in range(len(files) - 1, -1, -1):
+        [_, file_size, file_pos] = files[file_index]
+        found_space_index = None
+        for space_index in range(0, len(spaces) - 1):
+            if spaces[space_index][POSITION] > file_pos:
+                # don't look for spaces to the right of the file
+                break
+            if spaces[space_index][SIZE] >= file_size:
+                found_space_index = space_index
+                break
+        if found_space_index is not None:
+            # move file
+            [_, space_size, space_pos] = spaces[found_space_index]
+            files[file_index][POSITION] = space_pos
+            # Reduce space size and place it after the end of the moved file. Remove the space if there is no space left.
+            if space_size == file_size:
+                del spaces[found_space_index]
+            else:
+                spaces[found_space_index] = [None, space_size - file_size, space_pos + file_size]
+
+# precalc all positions:
+# each file and space is represented by a three-length list of [id, size, position] where
+# id is file_id for files, that is, index // 2
+# id is None for spaces (never used, just included to have the same representation as for files)
+# When we move a file to a space later, we update the position of the file and the size and position of the space
+
+pos = 0
+files = []
+spaces = []
+for index in range(0, len(filesystem)):
+    size = filesystem[index]
+    if size == 0:
+        continue
+    if index % 2 == 0: files.append([index // 2, size, pos])
+    else:              spaces.append([None, size, pos])
+    pos += size
+
+doit2_again(files, spaces)
+checksum = sum([ file_id * sum(range(pos, pos + size)) for [file_id, size, pos] in files])
+print("part2:", checksum) # 6363268339304
+sys.exit(1)
+
+# ====== over-complicated solution below (ignore) ======
 
 # 2 3  3  3  13  3  12 14   14   13  14   02
 # 00...111...2...333.44.5555.6666.777.888899
