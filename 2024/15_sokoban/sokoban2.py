@@ -70,14 +70,14 @@ def get_boxes_to_move(walls, boxes, pos, move_it):
 
 def sanity_check_before_remove(walls, boxes, boxes_to_move, move_it):
     if any([move_it(box) in walls or move_it(box) + 1 in walls for box in boxes_to_move]):
-        print("Error: attempt to move a box into a wall (this should not happen)")
+        print("Error: attempt to move a box into a wall")
         sys.exit(1)
     for box in boxes_to_move:
         if box not in boxes:
             print(f"Error: attempt to remove a box from {box} where there is no box: {boxes}")
             sys.exit(1)
 
-def sanity_check_after_remove(walls, boxes, boxes_to_move, move_it):
+def sanity_check_before_move(_, boxes, boxes_to_move, move_it):
     for box in boxes_to_move:
         if move_it(box) in boxes or move_it(box) - 1 in boxes:
             print(f"Error: attempt to move a box to [{move_it(box)},{move_it(box) + 1}] where there is a box already: {boxes}")
@@ -87,7 +87,7 @@ def move_boxes(walls, boxes, boxes_to_move, move_it):
     sanity_check_before_remove(walls, boxes, boxes_to_move, move_it)
     for box in boxes_to_move:
         boxes.remove(box)
-    sanity_check_after_remove(walls, boxes, boxes_to_move, move_it)
+    sanity_check_before_move(walls, boxes, boxes_to_move, move_it)
     for box in boxes_to_move:
         boxes.add(move_it(box))
 
