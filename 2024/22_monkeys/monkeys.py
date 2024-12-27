@@ -31,47 +31,38 @@ def do_part1():
 
 do_part1()
 
-# changes_to_price is mapping from a 4-tuple representing the 4 most recent price changes to the price
-def get_changes_to_price(n, count_changes):
+best_change = None
+best_result = -1
+
+def do_one_sequence(n, result):
+    global best_change, best_result
     prices = [n % 10]
     for _ in range(3, 2000):
         n = get_next_number(n)
         prices.append(n % 10)
     changes = [(y - x) for (x, y) in zip(prices, prices[1:])]  # 1 sec
 
-    # Make a mapping from each 4-tuple of price changes to the price
-    changes_to_price = dict()
+    seen_before = set()
     for i in range(0, len(changes) - 3):
         change = (changes[i], changes[i+1], changes[i+2], changes[i+3])
-        if change not in changes_to_price:
-            changes_to_price[change] = prices[i + 4]
-            if change not in count_changes:
-                count_changes[change] = 1
+        if change not in seen_before:
+            seen_before.add(change)
+            if change not in result:
+                result[change] = prices[i + 4]
             else:
-                count_changes[change] += 1
-    return changes_to_price
+                result[change] += prices[i + 4]
+            if result[change] > best_result:
+                best_change = change
+                best_result = result[change]
+    return
 
 def do_part2():
+    global best_change, best_result
     # numbers = [1, 2, 3, 2024]
-    count_changes = dict()
-    with Timer():  # 6.8 sec
-        # list of mappings from change to price
-        all_changes_to_price = [get_changes_to_price(n, count_changes) for n in numbers]
-    print(all_changes_to_price[:1])
-    most_common_changes = sorted(count_changes.items(), key=lambda x: x[1], reverse=True) # <0.1 sec
-
-    with Timer(): # 1.4 sec
-        best_change = None
-        max_result = -1
-        for (change, change_count) in most_common_changes:
-            if change_count * 9 < max_result:
-                print("limit")
-                break
-            result = sum([changes_to_price[change] for changes_to_price in all_changes_to_price if change in changes_to_price])
-            if result > max_result:
-                print("better:", result)
-                max_result = result
-                best_change = change
-        print("result:", max_result, "best_change:", best_change)
+    result = dict()
+    with Timer():  # 6.5 sec
+        for n in numbers:
+            do_one_sequence(n, result)
+    print(best_change, best_result)
 
 do_part2() # 2362,  (-2, 1, -1, 2)
