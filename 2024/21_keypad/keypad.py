@@ -1,35 +1,24 @@
 import sys
+from functools import cache
 
-test = {
-  "029A": "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A",
-  "980A": "<v<A>>^AAAvA^A<vA<AA>>^AvAA<^A>A<v<A>A>^AAAvA<^A>A<vA>^A<A>A",
-  "179A": "<v<A>>^A<vA<A>>^AAvAA<^A>A<v<A>>^AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A",
-  "456A": "<v<A>>^AA<vA<A>>^AAvAA<^A>A<vA>^A<A>A<vA>^A<A>A<v<A>A>^AAvA<^A>A",
-  "379A": "<v<A>>^AvA^A<vA<AA>>^AAvA<^A>AAvA^A<vA>^AA<A>A<v<A>A>^AAAvA<^A>A",
-}
+# create pad coordiantes (x, y)
+numpad_text = "789"  \
+              "456"  \
+              "123"  \
+              ".0A"
+numpad = {numpad_text[pos]: (pos % 3, pos // 3) for pos in range(0, len(numpad_text)) if numpad_text[pos] != "."}
 
-numeric_pad = {
-    '7': (0, 0),
-    '8': (1, 0),
-    '9': (2, 0),
-    '4': (0, 1),
-    '5': (1, 1),
-    '6': (2, 1),
-    '1': (0, 2),
-    '2': (1, 2),
-    '3': (2, 2),
-    '0': (1, 3),
-    'A': (2, 3)
-}
+dirpad_text = ".^A" \
+              "<v>"
+dirpad = {dirpad_text[pos]: (pos % 3, pos // 3) for pos in range(0, len(dirpad_text)) if dirpad_text[pos] != "."}
 
-directional_pad = {
-    '^': (1, 0),
-    'A': (2, 0),
-    '<': (0, 1),
-    'v': (1, 1),
-    '>': (2, 1)
-}
-
+# hack: 'x' * n where n <= 0 equals the empty string, for example, left(dx) = '' when dx > 0
+left =  lambda dx: "<" * (-dx)
+right = lambda dx: ">" * dx
+up =    lambda dy: "^" * (-dy)
+down =  lambda dy: "v" * dy
+left_or_right = lambda dx: left(dx) if dx < 0 else right(dx)
+up_or_down    = lambda dy: up(dy)   if dy < 0 else down(dy)
 
 # +---+---+---+
 # | 7 | 8 | 9 |
@@ -40,98 +29,90 @@ directional_pad = {
 # +---+---+---+
 #     | 0 | A |
 #     +---+---+
-#
+@cache
+def get_numpad_actions1(start, end):
+    (x1, y1) = numpad[start]
+    (x2, y2) = numpad[end]
+    (dx, dy) = (x2 - x1, y2 - y1)
+    if y1 == 3 and x2 == 0:    # avoid empty corner when starting from bottom row and moving to first column
+        actions = up(dy) + left_or_right(dx)
+    elif x1 == 0 and y2 == 3:  # avoid empty corner when starting from first column and moving to bottom row
+        actions = right(dx) + down(dy)
+    else:
+        # favor left over up/down over right to achieve the least number of actions
+        actions = left(dx) + up_or_down(dy) + right(dx)
+    return actions + "A"
+
+def get_numpad_actions(sequence):
+    actions = ""
+    for (start, end) in zip("A" + sequence, sequence):
+        actions += get_numpad_actions1(start, end)
+    return actions
+
 #     +---+---+
 #     | ^ | A |
 # +---+---+---+
 # | < | v | > |
 # +---+---+---+
-
-left = lambda dx: "<" * (-dx)
-right = lambda dx: ">" * dx
-up = lambda dy: "^" * (-dy)
-down = lambda dy: "v" * dy
-
-move_horizontally = lambda dx: left(dx) if dx < 0 else right(dx)
-move_vertically = lambda dy: up(dy) if dy < 0 else down(dy)
-
-def common(dx, dy):
-    horizontal = left(dx) if dx < 0 else right(dx)
-    vertical = up(dy) if dy < 0 else down(dy)
-    if dx == 0:
-        action = vertical
-    elif dy == 0:
-        action = horizontal
-    elif dx < 0 and dy < 0:  # move left, up
-        action = horizontal + vertical
-    elif dx < 0 and dy > 0:  # move left, down
-        action = horizontal + vertical
-    elif dx > 0 and dy < 0:  # move right, up
-        action = horizontal + vertical
-    elif dx > 0 and dy > 0:  # move down, right
-        action = vertical + horizontal
-    return action + "A"
-
-def operate_numeric_pad(start, end):
-    (x1, y1) = numeric_pad[start]
-    (x2, y2) = numeric_pad[end]
+@cache
+def get_dirpad_actions1(start, end):
+    (x1, y1) = dirpad[start]
+    (x2, y2) = dirpad[end]
     (dx, dy) = (x2 - x1, y2 - y1)
-    if y1 == 3 and x2 == 0:
-        return move_vertically(dy) + move_horizontally(dx) + "A"
-    if x1 == 0 and y2 == 3:
-        return move_horizontally(dx) + move_vertically(dy) + "A"
-    return common(dx, dy)
+    if y1 == 0 and x2 == 0:       # avoid empty corner when moving from first row to first columm
+        actions = down(dy) + left(dx)
+    elif x1 == 0 and y2 == 0:     # avoid empty corner when moving from first column to first row
+        actions = right(dx) + up(dy)
+    else:
+        # favor left over up/down over right to achieve the least number of actions
+        actions = left(dx) + up(dy) + down(dy) + right(dx)
+    return actions + "A"
 
-def operate_directional_pad(start, end):
-    if start == "A" and end == "<":
-        return "v<<A"
-    if start == "^" and end == "<":
-        return "v<A"
-    (x1, y1) = directional_pad[start]
-    (x2, y2) = directional_pad[end]
-    (dx, dy) = (x2 - x1, y2 - y1)
-    action = ""
-    if x1 == 0 and y1 == 1 and dx > 0:
-        action += ">"
-        dx = dx - 1
-    return action + common(dx, dy)
+# Returns a string of the actions to move from start to end and press the end button
+# operating through multiple number of pads. Ineffecient for larger number of pads.
+def get_dirpad_actions(start, end, pad_number):
+    actions = get_dirpad_actions1(start, end)
+    if pad_number == 1:
+        return actions
+    next_pad_actions = ""
+    for (start, end) in zip("A" + actions, actions):
+        next_pad_actions += get_dirpad_actions(start, end, pad_number - 1)
+    return next_pad_actions
 
-def onp(text):
-    action = ""
-    current = "A"
-    for ttt in text:
-        action += operate_numeric_pad(current, ttt)
-        current = ttt
-    return action
+# Same as above, but only count the actions without actually generating them. Caching is essential.
+@cache
+def count_dirpad_actions(start, end, pad_number):
+    actions = get_dirpad_actions1(start, end)
+    if pad_number == 1:
+        return len(actions)
+    result = 0
+    for (start, end) in zip("A" + actions, actions):
+        result += count_dirpad_actions(start, end, pad_number - 1)
+    return result
 
-def odp(text):
-    action = ""
-    current = "A"
-    for ttt in text:
-        action += operate_directional_pad(current, ttt)
-        current = ttt
-    return action
+# Main
+def generate_and_count_actions(sequence, nof_dirpads):
+    actions = get_numpad_actions(sequence)
+    result = 0
+    for (start, end) in zip("A" + actions, actions):
+        result += len(get_dirpad_actions(start, end, nof_dirpads))
+    return result * int(sequence[:3])
 
-def do_one_sequence(text):
-    action1 = onp(text)
-    action2 = odp(action1)
-    action3 = odp(action2)
-    # print(f"{text}: {action3}")
-    return action3
+def count_actions_without_generating(sequence, nof_dirpads):
+    actions = get_numpad_actions(sequence)
+    result = 0
+    for (start, end) in zip("A" + actions, actions):
+        result += count_dirpad_actions(start, end, nof_dirpads)
+    return result * int(sequence[:3])
 
 # sequences = [ "029A", "980A", "179A", "456A", "379A" ]    # Example: 68, 60, 68, 64, 64: 126384
 sequences = [ "140A", "143A", "349A", "582A", "964A" ]    # Puzzle input
 
-part1 = sum([len(do_one_sequence(sequence)) * int(sequence[:3]) for sequence in sequences])
-print("part1:", part1) # 154208
-sys.exit(1)
+part1 = sum([generate_and_count_actions(sequence, 2) for sequence in sequences])
+print("part1:", part1, "(generated)")  # 154208
 
-for what in sequences:
-    do_one_sequence(what)
-    print(f"{what}: {test[what] if what in test else None}")
-    print()
+part1 = sum([count_actions_without_generating(sequence, 2) for sequence in sequences])
+print("part1:", part1, "(counted)") # 154208
 
-def suk(text):
-    print("suk:", text)
-    for (t1, t2) in zip(text, text[1:]):
-        print(f"from {t1} to {t2}:", operate_directional_pad(t1, t2))
+part2 = sum([count_actions_without_generating(sequence, 25) for sequence in sequences])
+print("part2:", part2, "(counted)") # 188000493837892
