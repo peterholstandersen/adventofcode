@@ -8,7 +8,6 @@ crit = lambda n: n[-1] if n[-1] in "ABCDEFGHIJKL" else ""
 def read_it():
     roll_from = lambda roll: int(roll.split("-")[0])
     roll_to = lambda roll: int(roll.split("-")[1])
-
     filename = "./warhead_attack_table.txt"
     with open(filename) as f:
         xs = [line.strip().split("\t") for line in f if "-" in line and "F" not in line]
