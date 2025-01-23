@@ -1,0 +1,681 @@
+Zip
+t1 hit
+Glancing b l o w ~ extra
+ o
+damage. to.
+t 2 hits
+You receive initiative for next
+round. t 1 hit
+Foe must parry next round.
++I hit.
+Foe must parry next round.
++2 hits. Add t10 to next
+attack.
+Minor calf wound.
+foe receives 1 hit per round.
+Glancinglow to foe's side.
+t 3 hits. You receive initiative
+next round.
+Blow to side. t 2 hits. Foe mustparry next round at -1 0.
+Foe must parry next round
+at -20. t 2 hits.
+Minor calf wound. Foe takes
+I hit per round. t 2 hits.
+Strike along foe's back.
+t2 hits. Foe must now parry
+next round at -30.
+Strike along foe's back. Foe is
+stunned for 1 round and takes
+1 hit per round.
+Strike to foe's chest. Foe muslparry next round at -25.
+Foe takes 2 hits per round.
+Minor chest wound. Foe takes
+2 hits per round. t 3 hits.
+Foe must parry for next 2 rnds.
+Minor thigh wound. Foe takes
+2 hits per round. t 2 hits.
+Foe is stunned next round.
+Minor thigh wound. Foe takes
+2 hits per rounds. t 3 hits.
+Foe is stunned and unable to
+parry next round.
+Minor forearm wound.
+t2 hits. Foe takes 2 hits per
+round. Foe is at -10.
+Strike through foe's non-
+weapon shoulder. Arm is use-
+less, t1O to your next attack.
+Foe is stunned for 3 rnds.
+Strike along foe's neck.
+t5 hits. Foe is stunned
+for 3 rounds and cannot
+parry next round.
+Strike tower leg. Tear tendons
+Foe is at -25. t3 hits. Foe is
+stunned and unable to parry
+next round.
+Strike to foe's upper arm.
+t3 hits. Foe takes 3 hits per
+round and is at -25. Foe is
+stunned for 2 rounds.
+Side wound. Foe takes 5 hits
+per round and is stunnedfor 6
+rounds. Add t20 to your next
+attack.
+Strike foe in back. Foe is
+at -20 and takes 3 hits per
+round. Foe is stunned and
+unable to parry 2 rounds.
+Rip off foe's ear. t 3 hits. Foe
+takes 2 hits per round, hears a1
+-50. Foe is stunned and not
+%ble to parry for 2 rounds.
+Minor forearm wound. Foe is
+stunned during next round.
+t 2 hits. Foe is at -10 and takes
+2 hits per round.
+Strike shatters elbow in foe's
+weapon arm, t 3 hits. Arm is
+useless. Foe is stunned 4 rnds
+and cannot parry for 2 rnds.
+Strike to foe's neck area.
+Foe takes 3 hits per round and
+is at -5. Foe is stunned
+for 2 rounds.
+Strike to foe's calf. Slash
+muscle. Foe is at -40. t3 hits.
+Foe is stunned and unable to
+parry for 2 rounds.
+Strike through muscle in foe's
+non-weaponarm. Foe is at
+-30 and takes 3 hits per round.
+Foe is stunned for 3 rounds.
+Side wound. t 6 hits. Foe takes
+5 hits per round. Foe is at -25.
+Foe is stunned and unable to
+parry for 3 rounds,
+Strike to back of head. If foe
+has no helmet, he dies. If foe
+has a helmet, t 6 hits and foe is
+down for 2 rounds.
+Strike through foe's hip.
+Foe takes 3 hits per round.
+t5 hits. Foe is stunned next
+round. Foe is at -25.
+Strike foe's nose. There is a
+Jermanent scar. Foe takes
+3 hitstrnd. Foe is stunned and
+lnable to parry 3 rnds.
+Strike through foe's cheek.
+Foe drops and dies after
+9 rounds of incapacity.
+Add t20 to your next attack.
+t 1 hit
+ t 2 hits
+ t 3 hits
+t 3 hits
+Blow to foe's side. t 5 hits. You
+receive initiativenext round.
+t 4 hits
+t 2 hits Foe must parry for next
+round.
+Unbalancefoe with a nice grazing
+strike. You gain initiativet 5 hits.
+t 3 hitsround.
+Foe must parry for next
+Blow across side. Foe must parrynext round at -20. t 3 hits.
+You wound foe along side of
+chest. Foe is stunned 1 round
+and takes 1 hit per round.
+Minor calf wound.2 hits per round.
+Foe takes
+Strike across foe's back stuns
+foe for 2 rounds. Foe takes 1 hit
+per round.
+Minor chest wound. Foe takes
+2 hits per round. t3 hits. Fce is
+stunned for 2 rounds.
+Minor thigh wound. t 5 hits.
+Foe takes 2 hits per roundand
+is at -10. Foe is stunned for 2
+rounds.
+Forearm wound. Foe takes 2 hits
+per round and is at -10. t 3 hits.
+Foe is stunned for 2 rounds.
+Minor side wound. Foe fights at
+-10. You have initiativenext md.
+Stun foe for 1 round. Add t20 to
+your next attack.
+You wound foe along side of hip.
+Foe is stunned 1 round and takes
+2 hits per round.
+Foe receives minor side wound.
+t 2 hits. Foe is at -10. Foe takes 2
+hits per round.
+Minor thigh wound. Foe takes
+3 hits per round.
+Thigh strike. If foe has leg armor,
+t 3 hits. If foe has no armor, t 2 hits
+and 3 hits per round.
+Strike to foe's lower back. Foe is
+stunned and unable to parry next
+round. t 6 hits.
+Strike to foe's lower back. Foe takes
+3 hits per round. t 5 hits. Foe is
+stunned and unable to parry during
+next round.
+Strike to chest. t 5 hits. Foe takes
+3 hits per round and fights at -15.
+Foe must parry next round.
+Chest wound. Foe takes 4 hits per
+round. t 5 hits. Foe fights at -10.
+Foe is stunned and unable to parry
+next round.
+Strike to thigh. Foe takes 3 hits perround. Foe is stunned and unable
+to parry for the next round. t 3 hits.Thigh wound. Foe takes 5 hits per
+round. t 6 hits. Foe is stunned and
+unable to parry next round.
+Forearm wound. Foe takes 3 hits
+per round and is at -10. t 3 hits.
+Foe is stunned for 2 rounds.
+Forearm wound. Foe takes 3 hits pel
+round and is at -15. t 5 hits. Foe is
+stunned for 2 rounds.
+Strike shatters foe's knee.
+Foe is knocked down, is at -90,
+and stays down for 3 rounds.
+Foe is unable to parry 2 rounds.
+Strike along foe's neck. Foe is
+stunned for 4 rounds and cannot
+parry for 2 rounds. Add t15 to
+your next attack.
+Strike to lower leg. Foe is
+stunned and unable to parry for
+2 rounds. t 5 hits. Foe is at -50.
+Slash muscle and tendons.
+Strike foe in shield arm. Tear
+muscle and tendons. Foe takes
+3 hits per round, fights at -25.
+Foe is stunned 6 rounds.
+Side wound. t 6 hits. Foe takes
+5 hits per round. Foe is at -25.
+Foe is stunned and unableto
+parry for 3 rounds.
+Strike to back of head. If foe has
+no helmet, he dies. If foe has a
+helmet, +6 hits and foe is down
+for 2 rounds.
+Strike through foe's chest, seversa vein. Foe drops immediately
+and dies in 9 rounds due to shockand blood loss.
+Strike through foe's neck breaks
+backboneand severs spine. Foe
+is paralyzed from the neck down
+- permanently.
+Strike to side of head. Foe is
+knocked out for 6 hours. t10 hits.
+If foe has no helmet, you kill him.
+Strike foe in shoulder. t3 hits.
+Foe is stunned and unable to parry
+for 2 rounds. Foe is at -20.
+Strike to lower leg. Foe is at -50.
+Slash muscle and cartilage. t 6
+hits. Foe is stunned and unable to
+parry for 2 rounds!:
+Strike through both of foe's lungs.
+Foe drops and passes out. Foe dies
+in 6 rounds. Add t10 to your next
+attack.
+Strike foe's shoulder. Sever muscle
+and tendons. Arm is useless. Foe
+takes 3 hits per round. Foe is
+stunned for 6 rounds.
+Strike through lower leg.
+Foe is stunned and unable to
+parry for 3 rounds. Sever muscle.
+Foe is at -75.
+Strike foe in non-weaponarm.
+Arm is useless. Foe is stunned
+for 6 rounds. Foe takes 3 hits per
+round. t12 hits.
+Major abdomenal wound. Foe
+takes 6 hits per round. t10 hits.
+Foe is stunned and unable to parry
+for 3 rounds. Foe is at -20.
+Strike foe in weapon arm, bone is
+broken. Foe is stunned and unable t~
+parry for 3 rounds. t10 hits.
+Strike through foe's back severs a
+vein. Foe is stunned and unable to
+parry for 12 rounds -then he dies.
+Strike through foe's kidneys. Foe
+drops. +9 hits. Foe dies after 6
+rounds of very intense agony. Sad.
+Strike through leg severs an artery.
+Foe drops, lapses into
+unconsciousness, and dies
+after 12 rounds.
+Strike through foe's pid;! destroys a
+variety of organs. Foe fights
+normally for 6 rounds then dies.
+Sever artery in foe's arm.
+Foe is stunned for 12 rounds
+and then dies.
+Nail sucker in lower back. Internal
+bleeding and shock kill foe in 6
+rounds. Foe is down arld out.
+Shot through heart sends foe reeling
+back 10 feet to a spot suitablefor
+dying. Weapon is stuck in reeling
+foe.
+
+
+Zip
+t1 hit
+Glancing b l o w ~ extra
+ o
+damage. to.
+t 2 hits
+You receive initiative for next
+round. t 1 hit
+Foe must parry next round.
++I hit.
+Foe must parry next round.
++2 hits. Add t10 to next
+attack.
+Minor calf wound.
+foe receives 1 hit per round.
+Glancinglow to foe's side.
+t 3 hits. You receive initiative
+next round.
+Blow to side. t 2 hits. Foe mustparry next round at -1 0.
+Foe must parry next round
+at -20. t 2 hits.
+Minor calf wound. Foe takes
+I hit per round. t 2 hits.
+t 1 hit
+ t 2 hits
+ t 3 hits
+t 3 hits
+Blow to foe's side. t 5 hits. You
+receive initiativenext round.
+t 4 hits
+t 2 hits Foe must parry for next
+round.
+Unbalancefoe with a nice grazing
+strike. You gain initiativet 5 hits.
+t 3 hitsround.
+Foe must parry for next
+Blow across side. Foe must parrynext round at -20. t 3 hits.
+You wound foe along side of
+chest. Foe is stunned 1 round
+and takes 1 hit per round.
+Minor calf wound.2 hits per round.
+Foe takes
+Minor side wound. Foe fights at
+-10. You have initiativenext md.
+Stun foe for 1 round. Add t20 to
+your next attack.
+You wound foe along side of hip.
+Foe is stunned 1 round and takes
+2 hits per round.
+Foe receives minor side wound.
+t 2 hits. Foe is at -10. Foe takes 2
+hits per round.
+Minor thigh wound. Foe takes
+3 hits per round.
+Thigh strike. If foe has leg armor,
+t 3 hits. If foe has no armor, t 2 hits
+and 3 hits per round.
+
+
+Zip
+t1 hit
+Glancing b l o w ~ extra
+ o
+damage. to.
+t 2 hits
+t 1 hit
+ t 2 hits
+ t 3 hits
+t 3 hits
+t 4 hits
+Unbalancefoe with a nice grazing
+strike. You gain initiativet 5 hits.
+
+
+
+
+Zip
+t1 hit
+You receive initiative for next
+round. t 1 hit
+Foe must parry next round.
++I hit.
+Foe must parry next round.
++2 hits. Add t10 to next
+attack.
+Minor calf wound.
+foe receives 1 hit per round.
+Strike along foe's back.
+t2 hits. Foe must now parry
+next round at -30.
+Strike to foe's chest. Foe muslparry next round at -25.
+Foe takes 2 hits per round.
+Minor thigh wound. Foe takes
+2 hits per round. t 2 hits.
+Foe is stunned next round.
+Minor forearm wound.
+t2 hits. Foe takes 2 hits per
+round. Foe is at -10.
+
+
+
+
+ grazing shot; no extra hits. Your
+gun just jammed.. . sorry.
+
+You shoot off a piece of foe's
+equipment. tO hits.
+
+Hit foe's weapon, destroying it and
+breaking one of foe's fingers. t 2 hits.
+
+Foe is staggered by your effort. He is
+stunned next rnd. t 6 hits.
+
+Foe urinates in fear. t 7 hits.
+
+Just a nick. . . for t 1 hit.
+t 3 hit.
+Foe may not attack next rnd.
+t 4 hits.
+You gain initiative next rnd t 4 hits.
+Blow to foot. Foe receives 1 hit per
+rnd unless armored. t 5 hits.
+Glancing shots to back of foe's
+neck. Foe must parry next rnd
+at -30. t 5 hits.
+Two strikes to foe's collar area.
+He is knockedback parrying
+at -20 next rnd. Foe receives
+2 hitslrnd and t 6 hits.
+Two shots to foe's leg. If armored,
+t 4 hits. If not. t10 hits. Foe is
+stunned for next 3 rnds.
+Hit along wrist. Foe receives
+2 hitdrnd. Foe is stunned next rnd.
+t10 hits.
+Strikesto shoulderlcollar area.
+Foe is stunned for 5 rnds and arm
+is useless. Activity at -30 and foe
+receives 4 hits per md. t55 hits.
+Blow along neck, upper chest and
+arm. Foe knocked down stunned
+for 4 rnds. Foe receives 4 hitshd.
+t17 hits.
+Tendons in both legs are slashed.
+Foe is at -50 and is taking 4 hits/
+rnd. He is out for 2 rnds and
+stunned for 5 more. Too bad
+Foe's left side and arm are
+perforated. Foe is at -40. stunned
+and unable to parry for 6 rnds.
+Foetakes 3 hits/rnd and t18 hits.
+Foe pummeled in the side and hip.
+Immobilizeduntil aided. He takes
+6 hitslrnd and t20 hits.
+Hit foe's back and upper leg. He is
+bloody and knocked 10 feet away.
+Foe unable to parry for 5 rnds.
+6 hits per md. and t18 hits.
+t 2 hits.
+You have initiitive next rnd as foe
+checks for damage. t 4 hits.
+Slash foe's side. He must parry next
+rnd. t 5 hits.
+Foe must parry next rnd at -40 as
+the metal is too close for comfort.
+t 6 hits.
+Strikes to calf and hand give t 7 hits.
+Foe is at -10.
+Strike to the back and upper arm.
+Foe is stunned and unable to parry
+for 2 rnds. Foe receives 2 hitslrnd
+and t 8 Hits.
+Foe hit in side and upper arm.
+t10 hits. He is stunned for 3 rnds
+and takes 5 hitslrnd.
+Two strikes to the thigh and one to
+the forearm sadden foe. Foe receives
+4 hitshnd and t 11 hits. Foe is
+stunned 3 rnds and unable to parry.
+He is at -50.
+Blows along forearm and opposite
+shoulder. Arms less than useless.
+Foe receives 4 hitslrnd and 12 hits.
+Elbow shattered with forearm left
+dangling. Foe receives6 hitslrnd
+as foe sees this and passes out..
+t20 hits.
+Neck and arm strikes cause
+6 hitdrnd and t14 hits. Foe
+at -20 and stunnedfor 5 rnds.
+Foe's leg riddled. He is at -50 with
+4 hits/md and also stunned
+for 5 rnds. t17 hits.
+Foe's left arm takes multiple
+lacerations. Receives3 hitslrnd
+and operates at -40. Foe is stunned
+next rnd and cannot parry. t18 hits.
+Strikes to the side and leg. Foe
+sxperiences 9 Hitslrnd for bleeding.
+Stunned and unable to parry for
+5 rnds before passing out from
+ihock. t21 hits.
+Strikes blow away ear and pierce hip.
+%e at -30, cannot parry for 2 rnds,
+itunned for 6 rnds. and takes
+3 hitslrnd. t27 hits.
+Foe stunned next rnd. t 3 hits.
+Hit foe's side in poorly aimed fire.
+t 9 hits. You have the initiative.
+Blows to the sides cause foe to parry
+for 2 rnds. t 9 hits.
+You shatter one of foe's ribs. Foe is
+stunnedfor 2 rnds, takes 2 hitslrnd,
+and is knocked on his back. t11 hits.
+Strike foe's knee and calf. Foe receives
+4 hitslrnd and foe is at -40. t12 hits.
+Strike across foe's back and buttocks
+-ouch. He takes 2 hitslrnd and is
+stunned for 3 rnds. t13 hits.
+Foe, impressed with your hail of fire, is
+stunned for 2 rnds. t 7 hits.
+Solid hit to shoulder blade. Foe is stunne~for 4 rnds and is unable to parry
+for 2 rnds. He takes 2 hitslrnd. t 9 hits.
+Foe takes 3 side strikes. He is stunned fo
+6 rnds and bleeds, taking 4 hitslrnd.
+t11 hits. Add 10 to your next action.
+Foe hit in hip and along both sides. He is
+stunned and unable to parry for 4 rnds,
+is at -45, and takes 2 hitslrnd. t13 hits.
+Foe doubles over with hits to the shin,
+thigh, and groin. He receives
+5 hitslrnd, is prone for 4 rnds and
+permanentlysterile. t15 hits.
+Strikes to lower back paralyzefoe's legs.
+He is down (at -80 to all action) and
+taking 4 hitslrnd.
+You have initiative for the next 3 rnds.
+t10 hits
+Foe fumbles weapon and is unable to parr
+when he is stunned next rnds. t12 hits.
+Grazing head strikes stun foe for 3 rnds.
+He takes 2 hitslrnd. t13 hits. Add 25 to
+next attack.
+Several ribs shatter in glancing blows.
+Foe takes 2 hitslrnd and is stunned
+for 2 rnds with no parry. t15 hits.
+Arm and leg strike. if armored, foe takes
+t12 hits, If not, he takes t17 hits and is
+bleedingat 4 hitslrnd, is at -40 and stunnc
+for 10 rnd.
+Multiple back blows send foe flying 10 fee
+Unable to parry, foe is stunned for 12 rnd!
+He takes 6 hitslrnd and is at -70. t19 hits.
+Foe staggers and parries for 3 rnds
+after receivingminor wounds to the
+chest and groin. Foe receives 3 hitslrnc
+and t15 hits.
+Foe stunned for 5 rnds by strikes to the
+calf and thigh of both legs. He is down
+and taking 5 hitslrnd and is at -50.
+t16 hits.
+Major wounds to foe's chest. He and is
+stunnedand unable to parry for 3 rnds.
+He takes 5 hitslrnd. t19 hits.
+You lacerate foe's thigh and shatter a
+hip joint. He is in a week long coma
+taking 5 hitslrnd. t22 hits.
+Foe knocked back with chest strikes. Aorti
+damage causes 20 hitslrnd. Lung
+lacerationswill suffocate foe in 4 rnds.
+He is prone, meanwhile. t21 hits.
+Both thighs and groin very severely
+slashed. Foe takes 10 hitslrnd, is down
+and stunned for 20 rnds. t23 hits.
+Embarrassing.
+Foe drops possessions after being
+struck in the arms. Foe takes t17 hits,
+stunned 5 rnds. -25 on actions, and
+bleeds. Receives6 hitslrnd Give up.
+You cut foe down at the knees. Foe is
+immobilizedand at -100. Receives
+10 hitslrnd and foe is stunned
+for 12 rnds.
+Multiple strikes along the upper body
+Foe is stunned for 8 rnds and cannot
+parry for 4 rnds. Receives2 hitslrnd
+and t20 hits.
+Leg muscles and tendons slashed by
+strikes to calf and thigh. Foe stunned
+and unable to parry for 8 rnds, takes
+5 hitslrnd, and is at -75. t25 hits.
+Blows to both arms and chest break
+several indigenous bones. Foe is
+stunned for 12 rnds, takes 8 hitslrnd,
+and is unable to parry. t27 hits.
+Several side and back wounds cause
+foe to parry in a stunned state for the
+next 13 rnds. Foe takes 9 hitslrnd and
+t28 hits.
+Foe loses hand, and arm is severely
+mangled. He is unable to parry for 5 rnds
+and is stunned for 20 rnds. Receives
+6 hitslrnd. t24 hits.
+The side of foe's head springs 3 leaks.
+Too late to call a plumber; he's dead.
+Very wry.
+You deliver ugly wounds to foe's arms an(
+shoulders. Limbs are useless. Foe is at -6(
+stunned, and unable to parry for 5 rnds.
+t25 hits.
+You expose foe's chest cavity appropriate
+for pre med anatomy course. He is dead.
+t15 to your next action.
+Shoulder smashed. Foe spins back
+10 feet. He is stunned and unable to part)
+for 7 rnds. Arm is useless. Receives
+6 hitslrnd. t26 hits.
+Hits in the shin, knee, hip, and side, down
+foe in a convulsive heap. He is down for
+24 rnds and at -90. He takes 8 hitslrnd.
+t27 hits.
+Strike destroys foe's weapon and neatly
+separates h ~ arm
+ s from his bod. Foe is in
+shock and prone taking 8 hitslrnd.
+t30 hits.
+Severe blows to foe's side and abdomen.
+Foe is stunned and unable to parry
+for 5 rnds. He is taking 10 hitslrnd and is
+at -95. t32 hits.
+Muscles and tendons in foe's arm and leg
+are torn beyond recognition. He takes
+12 hitslrnd and is down for 20 rnds.
+t28 hits.
+Foe loses both legs to your razing assault.
+He is in shock, taking 14 hitslrnd, and will
+die anyway in 6 rnds. t30 hits.
+Bone splintered form one shoulder to the
+other. Additional thigh wound. Foe is pronl
+taking 14 hitslrnd and equipment is
+destroyed. t32 hits.
+Witless loser charges you as you sever his
+spine, hand, and lacerate the side of this
+head. He falls in a heap, quite lifeless.
+Foe knocked down. Strikes kill an
+unarmored foe. Otherwise, he is
+stunned, unable to parry for 12 rnds.
+receiving 9 hitslrnd. t30 hits.
+Sent spinning, foe is struck in the spine,
+the kidneys, and he loses a hand. This
+one is history in one rnd. t33 hits.
+Disemboweling stream of metal pummels
+foe's leg, abdomen, and chest. He lapses
+nto unconsciousnessbefore dying in 4
+rnds. t35 hits.
+Foe loses one ear, and nose is
+lacerated. Hearing at -50. Stunned
+for 10 mds if armored or out
+3 hours if not. Foe receives
+5 hitdrnd and t23 hits.
+mpacts to middle and upper back,
+tnd back of head. If unarmored, foe
+jies; otherwise, he is stunned for
+10 rnds. Takes 8 hits per rnd and
+t25 hits.
+:oe makes an excellent ventilator with
+ioles in the leg, side, and chest.
+i e expires in 1 rnd. t32 hits.
+Several strikes take out the liver spleen.
+and intestines Poor slob fights for one
+messy rnd then drops. t34 hits.
+Spinal shot induces a bizarre twist. Arterie!
+n chest and arm also severed. Foe is
+~aralyzed and dies in 3 rnds. t40 hits.
+Malicious blow to foe's face. He
+loses nose cheekbone and a part of
+his skull. Foe is in coma until
+revived. Receives4 hitslrnd and
+r25 his.
+:oe brutalizedin strikes to the side,
+:heek, neck, and brain. Foe dies
+n 2 prone rnds. Add 10 to your next
+~ttack. t35 hits.
+:oe knocked back 15 feet without an
+rrm, and with gashes in the neck.
+i e is paralyzed by a broken spine and
+lies in 8 rnds. t35 hits.
+4 classic example of unanesthetized
+surgery. You remove a plethora of vital
+Irgans. A bit sloppy. Foe is out and dies
+n 3 rnds. t35 hits.
+4 Steady stream nails the sucker in brain,
+ieck, heart, abdomen, and groin. Your
+lllies within 50 feet add + I 0 to their next
+~ttacks. You are out of ammunition.
+i i p is destroyed. More importantly,
+:he head is messily separatedfrom
+.he shoulders. Bye.
+'oor sucker is without the lower half
+tf his body and has a hole where his
+lye was to boot. It was quick.
+:oe takes strikes to the chest, and face.
+.ungs fill with blood, making breathing
+lifficult. Poor fool expires in 3 messy
+'nds.
+'oe hit in the heart and brain for a prompt
+jemise. Good shot. Add t20 to your next
+lttack
+:oe bursts into a bloody pulp. Yuck.
