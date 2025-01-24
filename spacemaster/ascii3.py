@@ -81,8 +81,11 @@ def print_table(table):
             i = i + 1
         out.append(entry_to_string(roll_from, roll_to, entry))
         if line_number != 1 and line_number % 5 == 1:
-            out.append("-------+-------------------+-------------------+-------------------+-------------------+-------------------+-----")
+            out.append(
+                "-------+-------------------+-------------------+-------------------+-------------------+-------------------+-----")
         line_number += 1
+    if out[-1][-1] != "-":
+        out.append("-------+-------------------+-------------------+-------------------+-------------------+-------------------+-----")
     print("\n".join(out))
     return len(out)
 
@@ -105,6 +108,8 @@ column_specs = tuple(product(armour_types, blast_radii))
 
 def print_header():
     #       ROLL    A20
+    print(f"GRENADE MK{GRENADE_MK}")
+    print()
     print(f"Opponent DB: -{ARMOUR_DB}, Mk{GRENADE_MK}: +{MK_BONUS}, Ground Zero: +40, 2nd: +30, 3rd: +20, 4th: +10, 5th: 0")
     print(f"Touching: +30, Half Soft: -20, Full Soft: -40, Half Hard: -50, Full Hard: -100 [not included below]")
 
@@ -158,7 +163,7 @@ def generate_new_table(table, column_specs, grenade_mk):
     max_roll = 150 - min([calculate_bonus(blast_radius) for (_, blast_radius) in column_specs])
     new_table = [None] * (max_roll + 1)
     for roll in range(min_roll, max_roll + 1):
-        new_table[roll] = tuple([compute_modified_entry(table, armour_type, roll, calculate_bonus(blast_radius), grenade_mk, max_entries[blast_radius]) for (armour_type, blast_radius) in column_specs])
+        new_table[roll] = list([compute_modified_entry(table, armour_type, roll, calculate_bonus(blast_radius), grenade_mk, max_entries[blast_radius]) for (armour_type, blast_radius) in column_specs])
     return new_table
 
 def compress_two_elements(x, y, z=None):
@@ -190,17 +195,17 @@ doit = lambda factor: f"(factor {factor * GRENADE_MK}): " + ", ".join(map(lambda
 blast_radii_blurb =\
 f"""
 BLAST RADII (Mk{GRENADE_MK}) [T12]
-PD  GP/Concussion/Sharpnel/Plasma/Aerosol {doit(1)}
-Std GP/Concussion/Sharpnel/Plasma/Aerosol {doit(2)}
-Enh GP/Concussion/Sharpnel/Plasma/Aerosol {doit(3)}
+PD  GP/Concussion/Shrapnel/Plasma/Aerosol {doit(1)}
+Std GP/Concussion/Shrapnel/Plasma/Aerosol {doit(2)}
+Enh GP/Concussion/Shrapnel/Plasma/Aerosol {doit(3)}
 PD  Smoke {doit(2)}
 Std Smoke {doit(4)}
 Enh Smoke {doit(6)}
 
 CRITICALS [T12]
-General Purpose: Sharpnel and Impact
+General Purpose: Shrapnel and Impact
 Concussion: 2 Impact
-Shrapnel: 2 Sharpnel critical
+Shrapnel: 2 Shrapnel critical
 Plasma: Heat, Impact and Radition
 Enhanced Plasma (Crowd Control): Automatic C Heat critical in Ground Zero in next round
 """
@@ -213,7 +218,7 @@ more_blurb =\
 
 warning =\
 """
-Enhanced Plasma disclaimer: EN: Handle with care. Do not fumble. WARNING: may set off incineration devices. Not for indoor use. Newbies, go pick something in the kid’s section. NO: Håndteres med forsiktighet. Ikke fumle. ADVARSEL: kan sette ut forbrenningsenheter. Ikke for innendørs bruk. Nybegynnere, gå og velg noe i barneavdelingen.  SE: Hantera med försiktighet. Fumla inte. VARNING: kan sätta igång förbränningsanordningar. Ej för inomhusbruk. Nybörjare, gå och välj något för barnen. DE: Vorsichtig behandeln. Fummeln Sie nicht herum. ACHTUNG: Verbrennungsgeräte können ausgelöst werden. Nicht für den Innenbereich geeignet. Neulinge, sucht euch etwas aus der Kinderabteilung aus. FI: Käsittele varovasti. Älä haukkua. VAROITUS: saattaa sytyttää polttolaitteita. Ei sisäkäyttöön. Aloittelijat, menkää valitsemaan jotain lastenosastosta.
+Enhanced Plasma Mk5 disclaimer: EN: Handle with care. Do not fumble. WARNING: may set off incineration devices. Not for indoor use. Newbies, go pick something in the kid’s section. NO: Håndteres med forsiktighet. Ikke fumle. ADVARSEL: kan sette ut forbrenningsenheter. Ikke for innendørs bruk. Nybegynnere, gå og velg noe i barneavdelingen.  SE: Hantera med försiktighet. Fumla inte. VARNING: kan sätta igång förbränningsanordningar. Ej för inomhusbruk. Nybörjare, gå och välj något för barnen. DE: Vorsichtig behandeln. Fummeln Sie nicht herum. ACHTUNG: Verbrennungsgeräte können ausgelöst werden. Nicht für den Innenbereich geeignet. Neulinge, sucht euch etwas aus der Kinderabteilung aus. FI: Käsittele varovasti. Älä haukkua. VAROITUS: saattaa sytyttää polttolaitteita. Ei sisäkäyttöön. Aloittelijat, menkää valitsemaan jotain lastenosastosta.
 """
 
 def print_rest():
@@ -221,13 +226,10 @@ def print_rest():
     print(blast_radii_blurb, end="")
     if GRENADE_MK == 5:
         print(warning, end="")
-
     # launcher error
     # range
-    # warning
 
 def test(table, roll, armour_type, blast_radius, result):
-    # print("index:", armour_type * 5 + blast_radius)
     x = table[roll][armour_type * 5 + blast_radius]
     ok = "ok" if x == result else f"not ok, expected {result}"
     print(f"roll: {roll}, armour_type {armour_type}: {x}. {ok}")
@@ -236,30 +238,26 @@ def test(table, roll, armour_type, blast_radius, result):
 
 table2 = generate_new_table(table, column_specs, GRENADE_MK)
 
+if GRENADE_MK == 5:
+    # print(table2[100])
+    # it is +25 for mk5, +40/+30/+20/+10/0 for blast radius, -30 for DN
+    # +35/+25/+15/+5/-5 for blast radius
+    GROUND_ZERO = BLAST_RADII[0]
+    test(table2, 90 - 35, AT20, GROUND_ZERO, "0")
+    test(table2, 91 - 35, AT20, GROUND_ZERO, "5")
+    test(table2, 126 - 35, AT20, GROUND_ZERO, "15")
+    test(table2, 127 - 35, AT20, GROUND_ZERO, "15A")
+    test(table2, 135 - 35, AT20, GROUND_ZERO, "25A")
+    test(table2, 136 - 35, AT20, GROUND_ZERO, "30B")
+    test(table2, 142 - 35, AT20, GROUND_ZERO, "40C")
+    test(table2, 145 - 35, AT20, GROUND_ZERO, "45D")
+    test(table2, 148 - 35, AT20, GROUND_ZERO, "50E")
+    test(table2, 165 - 35, AT20, GROUND_ZERO, "50E")
 
-# print(table2[100])
-# it is +25 for mk5, +40/+30/+20/+10/0 for blast radius, -30 for DN
-# +35/+25/+15/+5/-5 for blast radius
-GROUND_ZERO = BLAST_RADII[0]
-test(table2, 90 - 35, AT20, GROUND_ZERO, "0")
-test(table2, 91 - 35, AT20, GROUND_ZERO, "5")
-test(table2, 126 - 35, AT20, GROUND_ZERO, "15")
-test(table2, 127 - 35, AT20, GROUND_ZERO, "15A")
-test(table2, 135 - 35, AT20, GROUND_ZERO, "25A")
-test(table2, 136 - 35, AT20, GROUND_ZERO, "30B")
-test(table2, 142 - 35, AT20, GROUND_ZERO, "40C")
-test(table2, 145 - 35, AT20, GROUND_ZERO, "45D")
-test(table2, 148 - 35, AT20, GROUND_ZERO, "50E")
-test(table2, 165 - 35, AT20, GROUND_ZERO, "50E")
-
-foo = (
-    # AT20
-    ((88, 89, 90), "0", (91, 92, 93), "1", (106, 107, 108), "1", tuple(range(109, 123+1)), "2", (124, 125, 126), "3", (127, 128, 129), "3A", (130, 131, 132), "4A", 134, "5A", 137, "6B", 143, "8C", 146, "9D", (148, 149, 150), "10E")
-)
-
-for
-
-
+    foo = (
+        # AT20
+        ((88, 89, 90), "0", (91, 92, 93), "1", (106, 107, 108), "1", tuple(range(109, 123+1)), "2", (124, 125, 126), "3", (127, 128, 129), "3A", (130, 131, 132), "4A", 134, "5A", 137, "6B", 143, "8C", 146, "9D", (148, 149, 150), "10E")
+    )
 
 table2 = compress_table(table2)
 table2 = compress_table(table2)  # may not buy us anything
@@ -279,5 +277,4 @@ print_rest()
 
 print()
 print("nof_lines in table:", nof_lines)
-
 
