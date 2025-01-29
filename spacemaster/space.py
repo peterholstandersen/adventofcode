@@ -34,15 +34,15 @@ VELOCITY = 1
 VISUAL = 2
 
 gate = ((0, 0), (0, 0), CYAN + "o" + LIGHT_WHITE)
-heroes = ((2000, 2000), (-100, 0), LIGHT_WHITE + "x" + LIGHT_WHITE)
+heroes = ((-1000, 500), (0, 0), LIGHT_WHITE + "x" + LIGHT_WHITE)
 donnager = ((1000, 1000), (-50, -50), RED + "D" + LIGHT_WHITE)
 unn = ((400, 600), (0, 0), LIGHT_BLUE + "N" + LIGHT_WHITE)
 crafts = (gate, heroes, donnager, unn)
 
 prompt = "> "
-scale = 100
+scale = 50
 center = (0, 0)
-trajectories = []
+trajectories = set()
 
 def view(match):
     file = match.group(1)
@@ -61,23 +61,23 @@ def get_object(name):
     return target
 
 def plot_trajectories(what):
-    global crafts, scale, center, trajectories
+    global crafts, trajectories
     for name in trajectories:
         craft = get_object(name)
         if not craft:
             continue
         ((x, y), (dx, dy), visual) = craft
-
-
-
+        for n in range(0, 100):
+            what[(x + dx * n, y + dy * n)] = "."
 
 def show(match):
-    global crafts, scale, center, trajectories
+    global crafts, scale, center
     size = (150, 50)
     offset = (size[0] // 2, size[1] // 2)
     what = dict()
     plot_trajectories(what)
-    what = { ((x - center[0]) // scale + offset[0], (y - center[1]) // scale + offset[1]): visual for ((x, y), _, visual) in crafts }
+    what.update({ (x, y): visual for ((x, y), _, visual) in crafts })
+    what = { ((x - center[0]) // scale + offset[0], (y - center[1]) // scale + offset[1]): visual for ((x, y), visual) in what.items() }
     out = ""
     for y in range(size[1], -1, -1):
         for x in range(0, size[0]):
@@ -98,6 +98,7 @@ def set_prompt(p):
 def set_scale(match):
     global scale
     scale = int(match.group(1))
+    show(None)
 
 def set_center(match):
     global center
@@ -105,6 +106,7 @@ def set_center(match):
     if len(matches) == 1:
         center = matches[0]
         print("center", match.group(1), center)
+        show(None)
     else:
         print("cannot find", match.group(1))
 
@@ -149,9 +151,27 @@ def info(match):
 
 def add_trajectory(match):
     global trajectories
+    name = match.group(1)
     x = get_object(match.group(1))
-    trajectories.add(x)
-    show(None)
+    if x:
+        print("added", x[VISUAL])
+        trajectories.add(name)
+    # show(None)
+
+def set_course(match):
+    me = get_object(match.group(1))
+    target = get_object(match.group(2))
+    print(f"{me[VISUAL]}: setting course for {target[VISUAL]}")
+
+def set_burn(match):
+    me = get_object(match.group(1))
+    g = int(match.group(2))
+    seconds = int(match.group(2))
+    direction = int(match.group(3)) % 360
+    if not me:
+        return
+    gs = "gs" if g > 1 else "g"
+    print(f"{me[VISUAL]}: burning {g}{gs} for {seconds}s" + (". Here comes The Juice!" if g >= 2 else ""))
 
 hide = ["su", "exit", ".*", "\\?"]
 
@@ -163,14 +183,16 @@ commands = (
     (r"([a-zA-Z0-9]): torpedo ([a-zA-Z0-9])", fire_torpedo),
     (r"info ([a-zA-Z0-9]+)", info),
     (r"show", show),
-    (r"t X", add_trajectory),
+    (r"t ([a-zA-Z0-9]+)", add_trajectory),
+    (r"([a-zA-Z0-9]+): course ([a-zA-Z0-9]+)", set_course),
+    (r"([a-zA-Z0-9]+): burn ([0-9]+)g ([0-9]+)s ([0-9]+)", set_burn), # X: burn Ng Ms direction
     (r"su", lambda _: set_prompt("# ")),
     (r"exit", lambda _: set_prompt("> ")),
     (r"\?", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
     (r".*", lambda _: print("I am sorry, Dave. I cannot do that.")),
 )
 
-# show(None)
+show(None)
 print(prompt, end="")
 sys.stdout.flush()
 for line in sys.stdin:
@@ -183,11 +205,22 @@ for line in sys.stdin:
     print(prompt, end="")
     sys.stdout.flush()
 
+
+# X: burn Ng direction
+#
+# X: course Y
+#
 # trajectory +X, -X, reset
+# view speed X
 #
 # X: fire torpedo [at] Y
 #
 # add object (craft, torp)
+# X: set bearing N
+# X: set velocity N
+# X: set velocity (dx, dy)
+# X: show trajectory
+#
 # X: remove
 # X: lay course: flip/and/burn, patrol A-B-C, orbit Y, intercept Y
 # X: intercept course (max g)
