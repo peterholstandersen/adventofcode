@@ -3,6 +3,7 @@ import os
 import re
 import math
 from math import sqrt, atan2, degrees
+from functools import cache
 
 BLACK = "\033[0;30m"
 RED = "\033[0;31m"
@@ -29,55 +30,100 @@ NEGATIVE = "\033[7m"
 CROSSED = "\033[9m"
 END = "\033[0m"
 
-POSITION = 0
-VELOCITY = 1
-VISUAL = 2
+DEFAULT_COLOUR = LIGHT_WHITE
 
-gate = ((0, 0), (0, 0), CYAN + "o" + LIGHT_WHITE)
-heroes = ((-1000, 500), (0, 0), LIGHT_WHITE + "x" + LIGHT_WHITE)
-donnager = ((1000, 1000), (-50, -50), RED + "D" + LIGHT_WHITE)
-unn = ((400, 600), (0, 0), LIGHT_BLUE + "N" + LIGHT_WHITE)
-crafts = (gate, heroes, donnager, unn)
+class Craft:
+    # max g capability
+    ident = None
+    position = None
+    velocity = None
+    burn = []                   # list of (burn, direction, time)
+    colour = None
+    character = None
+    show_trajectory = False
+    def __init__(self, ident, position, velocity, colour, character):
+        self.ident = ident
+        self.position = position
+        self.velocity = velocity
+        self.colour = colour
+        self.character = character
+        self.burn = []                    # list of ((ddx, ddy), t)
+
+    def get_visual(self):
+        return self.colour + self.character + DEFAULT_COLOUR
+
+    @cache
+    def get_acceleration(self, time):
+        if time == 0:
+            return (0, 0)
+        t = 0
+        for (acceleration, dt) in self.burn:
+            t = t + dt
+            if time <= t:
+                return acceleration
+        return (0, 0)
+
+    @cache
+    def get_velocity(self, time):
+        (dx, dy) = self.velocity
+        for t in range(0, time + 1):
+            if t == time:
+                return (dx, dy)
+            (ddx, ddy) = self.get_acceleration(t)
+            (dx, dy) = (dx + ddx, dy + ddy)
+
+    @cache
+    def get_position(self, time):
+        # s = v * t + 1/2 a + t^2
+        (x, y) = self.position
+        (dx, dy) = self.velocity
+        for t in range(0, time):
+            (x, y) = (x + dx, y + dy)
+            (dx, dy) = self.get_velocity(t)
+        return (x, y)
+
+    def __str__(self):
+        return f"{self.ident}: pos={self.position} velocity={self.velocity} burn={self.burn} traj={self.show_trajectory}"
+
+heroes = Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x")
+heroes.burn = [ ((10, 0), 12), ((0, 0), 0), ((-10, 0), 12) ] # flip and burn
+heroes.show_trajectory = True
+gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o")
+donnager = Craft("Donnager", (1000, 1000), (-50, -50), RED, "D")
+nathan_hale = Craft("Nathan Hale", (400, 600), (20, 15), LIGHT_BLUE, "N")
+crafts = { craft.character: craft for craft in [heroes, gate, donnager, nathan_hale] }
 
 prompt = "> "
 scale = 50
 center = (0, 0)
-trajectories = set()
 
 def view(match):
     file = match.group(1)
     os.system(f"eog {file}.png")
 
-def get_object(name):
-    global crafts
-    matches = [ x for x in crafts if name in x[VISUAL] ]
-    target = None
-    if len(matches) > 1:
-        print("multiple targets found", name)
-    elif len(matches) == 0:
-        print("cannot find", name)
-    else:
-        target = matches[0]
-    return target
+def get_craft(name):
+    if name in crafts:
+        return crafts[name]
+    print("cannot find", name)
+    return None
 
 def plot_trajectories(what):
-    global crafts, trajectories
-    for name in trajectories:
-        craft = get_object(name)
-        if not craft:
+    for craft in crafts.values():
+        if not craft.show_trajectory:
             continue
-        ((x, y), (dx, dy), visual) = craft
-        for n in range(0, 100):
-            what[(x + dx * n, y + dy * n)] = "."
+        (x, y) = craft.position
+        (dx, dy) = craft.velocity
+        for t in range(0, 500):
+            what[craft.get_position(t)] = craft.colour + "." + DEFAULT_COLOUR
 
 def show(match):
-    global crafts, scale, center
     size = (150, 50)
     offset = (size[0] // 2, size[1] // 2)
-    what = dict()
-    plot_trajectories(what)
-    what.update({ (x, y): visual for ((x, y), _, visual) in crafts })
-    what = { ((x - center[0]) // scale + offset[0], (y - center[1]) // scale + offset[1]): visual for ((x, y), visual) in what.items() }
+    what1 = dict()
+    plot_trajectories(what1)
+    what1.update({ craft.position: craft.get_visual() for craft in crafts.values() })
+    what = { ((x - center[0]) // scale + offset[0], (y - center[1]) // scale + offset[1]): visual for ((x, y), visual) in what1.items() if "." in visual }
+    what.update({ ((x - center[0]) // scale + offset[0], (y - center[1]) // scale + offset[1]): visual for ((x, y), visual) in what1.items() if "." not in visual })
     out = ""
     for y in range(size[1], -1, -1):
         for x in range(0, size[0]):
@@ -87,6 +133,9 @@ def show(match):
     print(out)
     print("scale:", scale)
     print("center:", center)
+
+show(None)
+sys.exit(1)
 
 def tick(crafts):
     return [ ((x + x1, y + y1), (x1, y1), visual) for ((x, y), (x1, y1), visual) in crafts]
@@ -114,8 +163,8 @@ def intercept(crafts, me, target):
     # Better
     # https://www.reddit.com/r/uboatgame/comments/1etr0ff/simple_picture_guide_for_calculating_an_intercept/?rdt=64572
     # https://interceptcourse.app/
-    (my_pos, my_velocity, _) = get_object(me)
-    (target_pos, target_velocity, _) = get_object(target)
+    (my_pos, my_velocity, _) = get_craft(me)
+    (target_pos, target_velocity, _) = get_craft(target)
 
     target_new_pos = add(target_pos, target_velocity)
     my_new_position = add(my_pos, my_velocity)
@@ -131,13 +180,13 @@ def intercept(crafts, me, target):
 def fire_torpedo(match):
     shooter = match.group(1)
     target = match.group(2)
-    ((x1, y1), (dx, dy), _) = get_object(shooter)
+    ((x1, y1), (dx, dy), _) = get_craft(shooter)
     torpedo = ((x1, x2), lambda crafts: intercept(crafts, "t", target), "t")   # TODO: unique torps ids
     # add torpedo to "crafts" (TODO: rename)
     # need courses
 
 def info(match):
-    x = get_object(match.group(1))
+    x = get_craft(match.group(1))
     if x is None:
         return
     print(x)
@@ -152,19 +201,19 @@ def info(match):
 def add_trajectory(match):
     global trajectories
     name = match.group(1)
-    x = get_object(match.group(1))
+    x = get_craft(match.group(1))
     if x:
         print("added", x[VISUAL])
         trajectories.add(name)
     # show(None)
 
 def set_course(match):
-    me = get_object(match.group(1))
-    target = get_object(match.group(2))
+    me = get_craft(match.group(1))
+    target = get_craft(match.group(2))
     print(f"{me[VISUAL]}: setting course for {target[VISUAL]}")
 
 def set_burn(match):
-    me = get_object(match.group(1))
+    me = get_craft(match.group(1))
     g = int(match.group(2))
     seconds = int(match.group(2))
     direction = int(match.group(3)) % 360
@@ -257,3 +306,5 @@ for line in sys.stdin:
 # short commands
 #
 # trajectory colours
+# update view command
+
