@@ -2,7 +2,7 @@ import sys
 import os
 import re
 import math
-from math import sqrt, atan2, degrees
+from math import sqrt, atan2, degrees, ceil, floor
 from functools import cache
 
 BLACK = "\033[0;30m"
@@ -40,7 +40,7 @@ class Craft:
     burn = []                   # list of (burn, direction, time)
     colour = None
     character = None
-    show_trajectory = False
+    show_trajectory = True
     def __init__(self, ident, position, velocity, colour, character):
         self.ident = ident
         self.position = position
@@ -64,38 +64,67 @@ class Craft:
         return (0, 0)
 
     @cache
+    def get_speed(self, time=0):
+        (dx, dy) = self.get_velocity(time)
+        return sqrt(dx * dx + dy * dy)
+
+    @cache
     def get_velocity(self, time):
-        (dx, dy) = self.velocity
-        for t in range(0, time + 1):
-            if t == time:
-                return (dx, dy)
-            (ddx, ddy) = self.get_acceleration(t)
-            (dx, dy) = (dx + ddx, dy + ddy)
+        if time == 0:
+            return self.velocity
+        (dx, dy) = self.get_velocity(time - 1)
+        (ddx, ddy) = self.get_acceleration(time - 1)
+        return (dx + ddx, dy + ddy)
 
     @cache
     def get_position(self, time):
-        # s = v * t + 1/2 a + t^2
-        (x, y) = self.position
-        (dx, dy) = self.velocity
-        for t in range(0, time):
-            (x, y) = (x + dx, y + dy)
-            (dx, dy) = self.get_velocity(t)
-        return (x, y)
+        if time == 0:
+            return self.position
+        (x, y) = self.get_position(time - 1)
+        (dx, dy) = self.get_velocity(time)
+        return (x + dx, y + dy)
+
+    def cache_clear(self):
+        self.get_speed.cache_clear()
+        self.get_position.cache_clear()
+        self.get_velocity.cache_clear()
+        self.get_acceleration.cache_clear()
+
+    def set_burn(self, burn):
+        self.cache_clear()
+        self.burn = burn
+
+    def set_velocity(self, velocity):
+        self.cache_clear()
+        self.velocity = velocity
 
     def __str__(self):
         return f"{self.ident}: pos={self.position} velocity={self.velocity} burn={self.burn} traj={self.show_trajectory}"
 
 heroes = Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x")
-heroes.burn = [ ((10, 0), 12), ((0, 0), 0), ((-10, 0), 12) ] # flip and burn
 heroes.show_trajectory = True
 gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o")
-donnager = Craft("Donnager", (1000, 1000), (-50, -50), RED, "D")
-nathan_hale = Craft("Nathan Hale", (400, 600), (20, 15), LIGHT_BLUE, "N")
+donnager = Craft("Donnager", (1000, 1000), (0, 0), RED, "D")
+nathan_hale = Craft("Nathan Hale", (400, 600), (0, 0), LIGHT_BLUE, "N")
 crafts = { craft.character: craft for craft in [heroes, gate, donnager, nathan_hale] }
 
 prompt = "> "
 scale = 50
 center = (0, 0)
+
+# solve 2nd degree quation a*x2 + b*x + c = 0 ... returns [0] true for all x
+def solve(a, b, c):
+    if a == 0 and b == 0:
+        return [0] if c == 0 else None
+    if a == 0:
+        return -c / b
+    foo = b * b - 4 * a * c
+    if foo < 0:
+        return None
+    if foo == 0:
+        return [-b / (2 * a)]
+    bar = math.sqrt(foo)
+    return [ (-b + bar) / (2 * a), (-b - bar) / (2 * a)]
 
 def view(match):
     file = match.group(1)
@@ -109,14 +138,12 @@ def get_craft(name):
 
 def plot_trajectories(what):
     for craft in crafts.values():
-        if not craft.show_trajectory:
-            continue
-        (x, y) = craft.position
-        (dx, dy) = craft.velocity
-        for t in range(0, 500):
-            what[craft.get_position(t)] = craft.colour + "." + DEFAULT_COLOUR
+        if craft.show_trajectory:
+            for t in range(0, 500):
+                what[craft.get_position(t)] = craft.colour + "." + DEFAULT_COLOUR
 
 def show(match):
+    [ craft.cache_clear() for craft in crafts.values() ]
     size = (150, 50)
     offset = (size[0] // 2, size[1] // 2)
     what1 = dict()
@@ -133,12 +160,65 @@ def show(match):
     print(out)
     print("scale:", scale)
     print("center:", center)
+    for craft in crafts.values():
+        speed = craft.get_speed()
+        unit = "m/s"
+        if speed > 1000:
+            speed = speed / 1000
+            unit = "km/s"
+        speed = f"{speed:.0f} {unit}"
+        (ddx, ddy) = craft.get_acceleration(1)
+        acc = sqrt(ddx * ddx + ddy * ddy)
+        print(f"{craft.get_visual()}: {speed:>8}  {acc:>4.1f} m/s2")
 
-show(None)
-sys.exit(1)
+def calculate_interception_course(me, target):
+    # https://stackoverflow.com/questions/29919156/calculating-intercepting-vector
+    # https://ideone.com/x1jVMn
+    # https://www.reddit.com/r/uboatgame/comments/1etr0ff/simple_picture_guide_for_calculating_an_intercept/?rdt=64572
+    # https://interceptcourse.app/
+    me = get_craft(me)
+    target = get_craft(target)
+    if me is None or target is None:
+        return None
+    (x1, y1) = me.position
+    (x2, y2) = target.position
+    (dx1, dy1) = me.velocity
+    (dx2, dy2) = target.velocity
+    (ddx2, ddy2) = target.get_acceleration(1)
+    max_g = 2 # TODO
+    for t in range(1, 1000):
+        ddx1 = 2 * ((x2 - x1) / (t * t) + (dx2 - dx1) / t) # + 1/2 * ddx * t * t
+        ddy1 = 2 * ((y2 - y1) / (t * t) + (dy2 - dy1) / t ) # + 1/2 * ddy * t * t
+        (ddx1, ddy1) = (ddx1 + ddx2, ddy1 + ddy2)
+        g = sqrt(ddx1 * ddx1 + ddy1 * ddy1) / 9.81
+        if g <= max_g:
+            break
+    burn = [((ddx1, ddy1), t)]
+    me.set_burn(burn)
+    me.show_trajectory = True
+    show(None)
+    print(f"{me.get_visual()}: burn {burn} {g:.2f}g {t} seconds")
 
-def tick(crafts):
-    return [ ((x + x1, y + y1), (x1, y1), visual) for ((x, y), (x1, y1), visual) in crafts]
+def get_distance(a, b):
+    (x1, y1) = a
+    (x2, y1) = b
+    xx = x1 - x2
+    yy = y1 - y2
+    return sqrt(xx * xx + yy * yy)
+
+def show_interception_time(match):
+    me = get_craft(match.group(1))
+    target = get_craft(match.group(2))
+    if me is None or target is None:
+        return
+    for time in range(0, 1000):
+        ...
+    # HERTIL
+
+
+
+# def tick(crafts):
+#     return [ ((x + x1, y + y1), (x1, y1), visual) for ((x, y), (x1, y1), visual) in crafts]
 
 def set_prompt(p):
     global prompt
@@ -151,76 +231,67 @@ def set_scale(match):
 
 def set_center(match):
     global center
-    matches = [ (x, y) for ((x, y), (_, _), visual) in crafts if match.group(1) in visual ]
-    if len(matches) == 1:
-        center = matches[0]
-        print("center", match.group(1), center)
-        show(None)
-    else:
-        print("cannot find", match.group(1))
+    craft = get_craft(match.group(1))
+    if craft:
+       center = craft.position
+       show(None)
 
-def intercept(crafts, me, target):
-    # Better
-    # https://www.reddit.com/r/uboatgame/comments/1etr0ff/simple_picture_guide_for_calculating_an_intercept/?rdt=64572
-    # https://interceptcourse.app/
-    (my_pos, my_velocity, _) = get_craft(me)
-    (target_pos, target_velocity, _) = get_craft(target)
-
-    target_new_pos = add(target_pos, target_velocity)
-    my_new_position = add(my_pos, my_velocity)
-
-    dist1 = distance(my_pos, target_new_pos)
-    dist2 = distance(my_new_position, target_new_pos)
-    if min(dist1, dist2) < my_velocity:
-        my_new_position = target_new_pos
-        my_new_velcoity = sub(target_new_pos, my_position)
-    else:
-        my_velocity = add(my_velocity, max_acceleration)
-
-def fire_torpedo(match):
-    shooter = match.group(1)
-    target = match.group(2)
-    ((x1, y1), (dx, dy), _) = get_craft(shooter)
-    torpedo = ((x1, x2), lambda crafts: intercept(crafts, "t", target), "t")   # TODO: unique torps ids
-    # add torpedo to "crafts" (TODO: rename)
-    # need courses
+#def fire_torpedo(match):
+#    shooter = match.group(1)
+#    target = match.group(2)
+#    ((x1, y1), (dx, dy), _) = get_craft(shooter)
+#    torpedo = ((x1, x2), lambda crafts: intercept(crafts, "t", target), "t")   # TODO: unique torps ids
 
 def info(match):
     x = get_craft(match.group(1))
     if x is None:
         return
     print(x)
-    ((x, y), (dx, dy), visual) = x
-    velocity = sqrt(dx * dx + dy * dy)
-    bearing = round(degrees(atan2(dx, dy)))
-    if bearing < 0:
-        bearing = bearing + 360
-    print(f"velocity: {velocity:.1f} km/s")
-    print("bearing:", bearing)
 
 def add_trajectory(match):
-    global trajectories
     name = match.group(1)
-    x = get_craft(match.group(1))
-    if x:
-        print("added", x[VISUAL])
-        trajectories.add(name)
-    # show(None)
+    craft = get_craft(name)
+    if craft:
+        craft.show_trajectory = True
+        print("added", craft.get_visual())
+        show(None)
 
-def set_course(match):
-    me = get_craft(match.group(1))
-    target = get_craft(match.group(2))
-    print(f"{me[VISUAL]}: setting course for {target[VISUAL]}")
-
-def set_burn(match):
-    me = get_craft(match.group(1))
-    g = int(match.group(2))
-    seconds = int(match.group(2))
-    direction = int(match.group(3)) % 360
-    if not me:
+def set_burn_vector(match):
+    print("set_burn_vector")
+    craft = get_craft(match.group(1))
+    (ddx, ddy) = (float(match.group(2)), float(match.group(3)))
+    seconds = int(match.group(4))
+    if not craft:
         return
-    gs = "gs" if g > 1 else "g"
-    print(f"{me[VISUAL]}: burning {g}{gs} for {seconds}s" + (". Here comes The Juice!" if g >= 2 else ""))
+    g = sqrt(pow((ddx / 9.81), 2) + pow((ddy / 9.81), 2))
+    print(f"{craft.get_visual()}: burning ({ddx:.2f}, {ddy:.2f}) for {seconds}s ({g:.2f}g)" + (". Here comes The Juice!" if g >= 2 else ""))
+    craft.set_burn([((ddx, ddy), seconds)])
+    show(None)
+
+def set_velocity(match):
+    craft = get_craft(match.group(1))
+    if not craft:
+        return
+    (dx, dy) = (float(match.group(2)), float(match.group(3)))
+    craft.set_velocity((dx, dy))
+    show(None)
+
+def show_velocity(match):
+    craft = get_craft(match.group(1))
+    if not craft:
+        return
+    time = int(match.group(2))
+    (dx, dy) = craft.get_velocity(time)
+    velocity = sqrt(dx * dx + dy * dy)
+    print(f"{craft.get_visual()}: velocity {velocity:.0f} m/s")
+
+def reset(match):
+    global scale, center
+    for craft in crafts.values():
+        craft.show_trajectory = True
+    scale = 50
+    center = (0, 0)
+    show(None)
 
 hide = ["su", "exit", ".*", "\\?"]
 
@@ -229,12 +300,19 @@ commands = (
     (r"crafts", lambda _: print(crafts)),
     (r"scale ([0-9]+)", set_scale),
     (r"center ([a-zA-Z0-9])", set_center),
-    (r"([a-zA-Z0-9]): torpedo ([a-zA-Z0-9])", fire_torpedo),
+    # (r"([a-zA-Z0-9]): torpedo ([a-zA-Z0-9])", fire_torpedo),
     (r"info ([a-zA-Z0-9]+)", info),
     (r"show", show),
-    (r"t ([a-zA-Z0-9]+)", add_trajectory),
-    (r"([a-zA-Z0-9]+): course ([a-zA-Z0-9]+)", set_course),
-    (r"([a-zA-Z0-9]+): burn ([0-9]+)g ([0-9]+)s ([0-9]+)", set_burn), # X: burn Ng Ms direction
+    (r"traj ([a-zA-Z0-9]+)", add_trajectory),
+    (r"([a-zA-Z0-9]+): intercept ([a-zA-Z0-9]+)", lambda m: calculate_interception_course(m.group(1), m.group(2))),
+    # (r"([a-zA-Z0-9]+): burn_deg ([0-9]+)g ([0-9]+)s ([0-9]+)", set_burn), # X: burn Ng Ms direction
+    (r"([a-zA-Z0-9]+): burn [\(]*([0-9\.\-]+)[, ]*([0-9\.\-]+)[\)]* ([0-9]+)[s]?", set_burn_vector), # X: burn (0.8, 1.0) Ns
+    (r"([a-zA-Z0-9]+): vel [\(]*([0-9\.\-]+)[, ]*([0-9\.\-]+)[\)]*", set_velocity), # x: vel (100, 200)
+    (r"([a-zA-Z0-9]+): show v ([0-9]+)[s]", show_velocity), # X: show vel Ns
+    (r"([a-zA-Z0-9]+): show vel ([0-9]+)[s]", show_velocity), # X: show vel Ns
+    (r"([a-zA-Z0-9]+): show velo ([0-9]+)[s]", show_velocity), # X: show vel Ns
+    (f"([a-zA-Z0-9]+): time ([a-zA-Z0-9]+)", show_interception_time), # X: show Y
+    (r"reset", reset),
     (r"su", lambda _: set_prompt("# ")),
     (r"exit", lambda _: set_prompt("> ")),
     (r"\?", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
@@ -255,14 +333,20 @@ for line in sys.stdin:
     sys.stdout.flush()
 
 
-# X: burn Ng direction
+# interception time
 #
-# X: course Y
-#
-# trajectory +X, -X, reset
-# view speed X
+# auto correct interception
+# variable max_g
 #
 # X: fire torpedo [at] Y
+# query speed at time, velocity V km/s, max acceleration Xg
+#
+# show "*" interception points
+# calculate time of interception/impact
+#
+#
+# show trajectory +X, -X, reset
+# show speed X
 #
 # add object (craft, torp)
 # X: set bearing N
@@ -301,10 +385,19 @@ for line in sys.stdin:
 # scale [ +n | -n ]
 # repeat until interupted, e.g., scale -1
 #
-# transponder codes
-#
 # short commands
 #
-# trajectory colours
 # update view command
-
+#
+# X: command (default X to me)
+# command editing, history
+#
+# X: show info (velocity, acceleration, transponder code, ...)
+# generate transponder code
+# bigger elements, orbits, objects (sun, planets, moon), gravity
+# patroling courses
+# boot sequence
+#
+# print entire burn sequence -- and name
+# unify syntax
+#
