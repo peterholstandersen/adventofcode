@@ -1,161 +1,10 @@
-import sys
-import os
-import re
-import math
-from math import sqrt, atan2, degrees, ceil, floor
-from functools import cache
-import datetime
-import random
-import signal
-from copy import deepcopy
-import time
-import uuid
-
-BLACK = "\033[0;30m"
-RED = "\033[0;31m"
-GREEN = "\033[0;32m"
-BROWN = "\033[0;33m"
-BLUE = "\033[0;34m"
-PURPLE = "\033[0;35m"
-CYAN = "\033[0;36m"
-LIGHT_GRAY = "\033[0;37m"
-DARK_GRAY = "\033[1;30m"
-LIGHT_RED = "\033[1;31m"
-LIGHT_GREEN = "\033[1;32m"
-YELLOW = "\033[1;33m"
-LIGHT_BLUE = "\033[1;34m"
-LIGHT_PURPLE = "\033[1;35m"
-LIGHT_CYAN = "\033[1;36m"
-LIGHT_WHITE = "\033[1;37m"
-BOLD = "\033[1m"
-FAINT = "\033[2m"
-ITALIC = "\033[3m"
-UNDERLINE = "\033[4m"
-BLINK = "\033[5m"
-NEGATIVE = "\033[7m"
-CROSSED = "\033[9m"
-END = "\033[0m"
-
-BG_LIGHT_CYAN = "\033[1;46m"
-BG_CYAN = "\033[1;106m"
-# https://i.sstatic.net/9UVnC.png
-# LIGHT: (BG_BLACK, BG_RED, BG_GREEN, BG_YELLOW, BG_BLUE, BG_MAGENTA, BG_CYAN, BG_WHITE) = range(40,48)
-# Bright versions starts at 100 (ends at 107)
-
-DEFAULT_COLOUR = END # LIGHT_WHITE
-
-class Craft:
-    # max g capability
-    ident = None
-    position = None
-    velocity = None
-    acceleration = None
-    colour = None
-    key = None
-    visual = None
-    image = None
-    max_g = None
-    show_trajectory = True
-    transponder = None
-    course_handler = None
-    resolve = None
-
-    def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
-        self.ident = ident
-        self.position = position
-        self.velocity = velocity
-        self.colour = colour
-        self.key = key
-        self.visual = visual
-        self.image = image
-        self.max_g = max_g
-        self.acceleration = (0, 0)
-        self.generate_transponder_code()
-
-    def get_visual(self):
-        return self.colour + self.visual + DEFAULT_COLOUR
-
-    def set_visual(self, visual):
-        self.visual = visual
-
-    def set_ident(self, ident):
-        self.ident = ident
-        self.generate_transponder_code()
-
-    def set_key(self, key):
-        self.key = key
-
-    def generate_transponder_code(self):
-        random.seed(hash(self.ident))
-        code = ""
-        for i in range(0, 3):
-            code += chr(random.randint(ord("A"), ord("Z")))
-        code += "-"
-        for i in range(0, 8):
-            code += str(random.randint(0, 10))
-        self.transponder = code
-
-    def get_acceleration(self, t=None):
-        return self.acceleration
-
-    def get_speed(self, t=0):
-        (dx, dy) = self.get_velocity(t)
-        return sqrt(dx * dx + dy * dy)
-
-    def get_velocity(self, t):
-        (dx, dy) = self.velocity
-        (ddx, ddy) = self.acceleration
-        return (dx + ddx * t, dy + ddy * t)
-
-    def set_position(self, pos):
-        self.position = pos
-
-    def get_position(self, t=0):
-        (x, y) = self.position
-        (dx, dy) = self.velocity
-        (ddx, ddy) = self.acceleration
-        foo = lambda pos, v, a: pos + v * t + (1/2) * a * t * t
-        return (foo(x, dx, ddx), foo(y, dy, ddy))
-
-    def set_acceleration(self, acceleration):
-        self.acceleration = acceleration
-
-    def set_velocity(self, velocity):
-        self.velocity = velocity
-
-    def adjust_course(self):
-        if self.course_handler:
-            self.course_handler(self)
-
-    def set_course_handler(self, fun):
-        self.course_handler = fun
-
-    def tick(self, seconds):
-        self.position = self.get_position(seconds)
-        (dx, dy) = self.velocity
-        (ddx, ddy) = self.acceleration
-        self.velocity = (dx + ddx * seconds, dy + ddy * seconds)
-
-    def __str__(self):
-        return f"{self.ident}: pos={self.position} velocity={self.velocity} burn={self.acceleration} traj={self.show_trajectory} transponder={self.transponder}"
+from common import *
+from craft import *
 
 interceptions_to_be_resolved = set()
-
-random.seed(42)
-heroes = Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x", "x", None, 2)
-gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o", "o", None, 2)
-donnager = Craft("Donnager", (1000, 1000), (0, 0), RED, "D", "D", "Donnager_Render_1.png", 2)
-nathan_hale = Craft("Nathan Hale", (400, 600), (0, 0), LIGHT_BLUE, "N", "N", None, 2)
-crafts = {craft.key: craft for craft in [heroes, gate, donnager, nathan_hale]}
-
-generic_torpedo = Craft("Torpedo", (0, 0), (0, 0), LIGHT_WHITE, "t", "t", None, 15)
-generic_missile = Craft("Missile", (0, 0), (0, 0), LIGHT_WHITE, None, ",", None, 15)   # None to replaced by uuid
-
-km_to_m = 1000
-for craft in crafts.values():
-    craft.position = (craft.position[0] * km_to_m, craft.position[1] * km_to_m)
-
+crafts = make_crafts()
 prompt = scale = center = None
+is_running = False
 
 def reset_view(match):
     global prompt, scale, center
@@ -166,8 +15,6 @@ def reset_view(match):
         craft.show_trajectory = True
     if match is not None:
         show(None)
-
-reset_view(None)
 
 # solve 2nd degree quation a*x2 + b*x + c = 0 ... returns True if true for all x
 def solve(a, b, c):
@@ -204,10 +51,7 @@ def get_craft(name, default="x"):
     print(f"{name} is lost in space")
 
 def plot_trajectories(what):
-    for craft in crafts.values():
-        if craft.show_trajectory:
-            for t in range(0, 10000):
-                what[craft.get_position(t)] = craft.colour + "." + DEFAULT_COLOUR
+    what.update({ craft.get_position(t): craft.colour + "." + DEFAULT_COLOUR for craft in crafts.values() if craft.show_trajectory for t in range(0, 10000) })
 
 def show(match):
     me = get_craft("x")
@@ -243,8 +87,6 @@ def show(match):
             time = get_interception_time(me, craft)
             if time:
                 print(f"  tti={time}s", end="")
-                #if time < 10:
-                #    print(RED + BLINK + "  PROXIMITY ALERT" + DEFAULT_COLOUR, end="")
                 if get_distance(me.get_position(), craft.get_position()) < 100000:
                     print(RED + BLINK + "  PROXIMITY ALERT" + DEFAULT_COLOUR, end="")
         print()
@@ -319,20 +161,12 @@ def get_interception_time(me, target):
     pos2 = target.get_position(time)
     dist = get_distance(pos1, pos2)
     if False:
-        print("time:", time)
-        print("pos1:", pos1)
-        print("pos2:", pos2)
-        print("dist:", dist)
-
+        print("time:", time, "pos1:", pos1, "pos2:", pos2, "dist:", dist)
     pos1a = me.get_position(time + 1)
     pos2a = target.get_position(time + 1)
     dist1 = get_distance(pos1a, pos2a)
     if False:
-        print("time:", time + 1)
-        print("pos1a:", pos1a)
-        print("pos2a:", pos2a)
-        print("dist1:", dist1)
-
+        print("time:", time + 1, "pos1a:", pos1a, "pos2a:", pos2a, "dist1:", dist1)
     return time if dist < dist1 else time + 1
 
 def show_interception_time(match):
@@ -540,7 +374,6 @@ def tick(seconds):
 def tick_handler(match):
     tick(1 if match.group(1) == "" else int(match.group(1)))
 
-is_running = False
 def run(match):
     global is_running
     is_running = True
@@ -614,6 +447,7 @@ def sigint_handler(signum, frame):
     sys.exit(1)
 
 signal.signal(signal.SIGINT, sigint_handler)
+reset_view(None)
 
 show(None)
 print_prompt()
@@ -680,7 +514,6 @@ for line in sys.stdin:
 # get/create scaled images of crafts
 # unify syntax
 # let craft decide what to show in overview (will always allow hiding stuff)
-#
 #
 # ------------------------------------------------------
 # astroid, debris
