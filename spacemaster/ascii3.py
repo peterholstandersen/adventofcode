@@ -43,25 +43,6 @@ def read_max_entries():
         priv_line = line
     return max_entries
 
-def justify(x):
-    if len(x) == 0:
-        return "   "
-    if len(x) == 1:
-        return " " + x + " "
-    if len(x) == 2:
-        return x + " "
-    return x
-
-def entry_to_string(roll_from, roll_to, entry):
-    roll = f"{roll_from:02}" + "-" + f"{roll_to:02}"
-    foo = []
-    for i in range(0, len(entry), 5):
-        xs = entry[i:i+5]
-        txt = " ".join([f"{justify(x)}".replace(" 0", " -") for x in xs])
-        foo.append(txt)
-    entry_out = "|" + "|".join(foo) + "|"
-    return f"{roll:<7}" + entry_out + f"{roll:<8}"
-
 split_element = lambda entry: ((int(entry), "") if entry[-1].isdigit() else (int(entry[:-1]), entry[-1]))
 
 def compute_modified_entry(table, armour_type, roll, modifier, grenade_mk, max_entry):

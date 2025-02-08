@@ -1,5 +1,26 @@
 from ascii3 import *
 
+# woo woo: https://powerman.name/doc/asciidoc
+
+def justify(x):
+    if len(x) == 0:
+        return "   "
+    if len(x) == 1:
+        return " " + x + " "
+    if len(x) == 2:
+        return x + " "
+    return x
+
+def entry_to_string(roll_from, roll_to, entry):
+    roll = f"{roll_from:02}" + "-" + f"{roll_to:02}"
+    foo = []
+    for i in range(0, len(entry), 5):
+        xs = entry[i:i+5]
+        txt = " ".join([f"{justify(x)}".replace(" 0", " -") for x in xs])
+        foo.append(txt)
+    entry_out = "|" + "|".join(foo) + "|"
+    return f"{roll:<7}" + entry_out + f"{roll:<8}"
+
 def print_table(table):
     out = []
     i = 0

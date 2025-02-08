@@ -5,6 +5,13 @@ interceptions_to_be_resolved = set()
 crafts = make_crafts()
 prompt = scale = center = None
 is_running = False
+savefile = "space-" + str(int(time.time())) + ".pickle"
+save_frequency = 10
+next_save = time.time() + save_frequency
+locked = False
+
+development_mode = True
+# development_mode = False
 
 def reset_view(match):
     global prompt, scale, center
@@ -29,8 +36,8 @@ def solve(a, b, c):
     if foo == 0:
         solution = -b / (2 * a)
         return [solution] if solution >= 0 else None
-    solution1 = (-b + math.sqrt(foo)) / (2 * a)
-    solution2 = (-b - math.sqrt(foo)) / (2 * a)
+    solution1 = (- b + math.sqrt(foo)) / (2 * a)
+    solution2 = (- b - math.sqrt(foo)) / (2 * a)
     solutions = []
     if solution1 > 0:
         solutions.append(solution1)
@@ -70,9 +77,10 @@ def show(match):
         out += "\n"
     os.system("clear")
     print(out)
-    print("scale:", scale)
+    print(f"scale 1:{scale}    |----------| = {scale * 10 // 1000} km")
     print("center:", center)
-    for craft in crafts.values():
+    for (dict_key, craft) in crafts.items():
+        visual = craft.get_visual() if len(dict_key) == 1 else dict_key # hack
         speed = craft.get_speed()
         unit = "m/s"
         if speed > 1000:
@@ -81,7 +89,7 @@ def show(match):
         speed = f"{speed:.1f} {unit}"
         (ddx, ddy) = craft.get_acceleration()
         acc = sqrt(ddx * ddx + ddy * ddy)
-        print(f"{craft.get_visual()}: {speed:>10}  {acc:>4.1f} m/s2", end="")
+        print(f"{visual}: {speed:>10}  {acc:>4.1f} m/s2", end="")
         if craft != me:
             print(f"  {get_distance_as_text(me, craft)}", end="")
             time = get_interception_time(me, craft)
@@ -114,9 +122,9 @@ def set_interception_course(me, target):
         print(f"Unable to plot interception course with less than {me.max_g}g (or in less than 10h).")
         return None
     me.set_acceleration((ddx1, ddy1))
-    me.set_course_handler(lambda craft: set_interception_course(craft.key, target.key))  # craft is also me, btw
+    me.set_course_handler(set_interception_course, target.key)
     show(None)
-    print(f"{me.get_visual()}: burn {g:.1f}g ({ddx1:.1f}, {ddy1:.1f}) (tti {t} seconds)")
+    # print(f"{me.get_visual()}: burn {g:.1f}g ({ddx1:.1f}, {ddy1:.1f}) (tti {t} seconds)")
     return True
 
 def get_distance(a, b):
@@ -192,12 +200,17 @@ def set_scale(match):
 def zoom(match):
     global scale
     what = match.group(1)
+    i = len(what)
+    factors = [80, 70, 60, 50, 40, 30, 20, 10]
+    if i >= len(factors):
+        i = len(factors) - 1
+    factor = factors[i]
     if "-" in what:
         for _ in what:
-            scale = 100 * scale // 90
+            scale = 100 * scale // factor
     if "+" in what:
         for _ in what:
-            scale = 90 * scale // 100
+            scale = factor * scale // 100
     show(None)
 
 def set_center(match):
@@ -250,6 +263,14 @@ def burn_brake_Xg(match):
     what = "burning" if g > 0 else "braking"
     print(f"{me.get_visual()}: {what} {abs(g)}g")
 
+def set_position(match):
+    craft = get_craft(match.group(1))
+    if not craft:
+        return
+    (x, y) = (float(match.group(2)), float(match.group(3)))
+    craft.set_position((x, y))
+    show(None)
+
 def set_velocity(match):
     craft = get_craft(match.group(1))
     if not craft:
@@ -274,13 +295,25 @@ def show_position(match):
         return
     print(f"{me.get_visual()} is at {me.get_position(time)} in {time} seconds")
 
-def get_distance_as_text(me, target):
-    dist = int(round(get_distance(me.get_position(0), target.get_position(0))))
-    unit = "m"
+def as_text(dist):
+    if dist > 1.496e+11:
+        dist = dist / 1.496e+11
+        unit = " AU"
+        return f"{dist:.1f}{unit}"
+    unit = " m"
     if dist > 1000:
-        dist = dist // 1000
-        unit = "km"
-    return f"{dist} {unit}"
+        dist = dist / 1000
+        unit = " km"
+    if dist > 1000:
+        dist = dist / 1000
+        unit = "K km"
+    if dist > 1000:
+        dist = dist / 1000
+        unit = "M km"
+    return f"{dist:.1f}{unit}"
+
+def get_distance_as_text(me, target):
+    return as_text(int(round(get_distance(me.get_position(0), target.get_position(0)))))
 
 def show_distance(match):
     me = get_craft(match.group(1))
@@ -321,6 +354,8 @@ def fire_torpedo(match):
     torpedo.set_position(me.get_position())
     torpedo.set_velocity(me.get_velocity(0))
     torpedo.show_trajectory = False
+    torpedo.silence_interception_with.add(me.key)
+    me.silence_interception_with.add(torpedo.key)
     crafts[torpedo.key] = torpedo
     if not set_interception_course(torpedo.key, target.key):
         print(f"Unable to target lock {target.get_visual()}")
@@ -345,6 +380,8 @@ def fire_missile(match):
     missile.set_velocity(me.get_velocity(0))
     missile.show_trajectory = False
     crafts[missile.key] = missile
+    missile.silence_interception_with.add(me.key)
+    me.silence_interception_with.add(missile.key)
     if not set_interception_course(missile.key, target.key):
         print(f"Unable to target lock {target.get_visual()}")
         return
@@ -363,9 +400,10 @@ def tick(seconds):
         [ craft.tick(1) for craft in crafts.values() ]
         for craft1 in crafts.values():
             for craft2 in crafts.values():
-                if craft1 != craft2 and get_distance(craft1.get_position(), craft2.get_position()) < 100:
-                    interception = True
-                    interceptions_to_be_resolved.add(tuple(sorted((craft1.key, craft2.key))))
+                if craft1 == craft2 or get_distance(craft1.get_position(), craft2.get_position()) > 100 or craft1.silence_interception(craft2) or craft2.silence_interception(craft1):
+                    continue
+                interception = True
+                interceptions_to_be_resolved.add(tuple(sorted((craft1.key, craft2.key))))
         if interception:
             break
     [ craft.adjust_course() for craft in crafts.values() ]
@@ -382,6 +420,37 @@ def run(match):
         time.sleep(1)
         show(None)
 
+# noinspection PyBroadException
+def save(match, quiet=False):
+    global savefile
+    filename = "save/" + (match.group(1) if match and match.group(1) != "" else savefile)
+    if filename[-7:] != ".pickle":
+        filename = filename + ".pickle"
+    try:
+        with open(filename, "wb") as file:
+            crafts_copy = copy.deepcopy(crafts)
+            # [ craft.set_course_handler(None) for craft in crafts_copy.values() ]
+            pickle.dump(crafts_copy, file)
+        if not quiet:
+            print("Saved", filename)
+    except:
+        print(f"Error save to {filename}")
+
+# noinspection PyBroadException
+def load(filename):
+    global savefile
+    filename = "save/" + (match.group(1) if match and match.group(1) != "" else savefile)
+    if filename[-7:] != ".pickle":
+        filename = filename + ".pickle"
+    try:
+        with open(filename, "rb") as file:
+            crafts = pickle.load(file)
+        show(None)
+        print("Loaded", filename)
+        # print("Autocorrection of interception courses cancelled (including missiles and torpedoes)")
+    except:
+        print(f"Error loading {filename}")
+
 hide = ["su", "exit", ".*", "\\?"]
 
 error_msgs = (
@@ -392,6 +461,15 @@ error_msgs = (
     "You will disarm all your weapons and escort us to Sector 001, where we will begin assimilating your culture and technology.",
 )
 
+def add_craft(match):
+    key = match.group(1)
+    name = match.group(2)
+    craft = make_craft(key, name)
+    if craft:
+        crafts[key] = craft
+        show(None)
+        print(f"{craft.get_visual()} appears in a puff of matter")
+
 commands = (
     (r"show", show),
     (r"scale ([0-9]+)", set_scale),
@@ -399,12 +477,16 @@ commands = (
     (r"view ([A-Za-z0-9]+)", view_craft_from_file),
     (r"info ([a-zA-Z0-9]+)", info),
     (r"traj ([a-zA-Z0-9]+)", toggle_trajectory),
+    (r"add ([a-zA-Z0-9]) ([a-zA-Z0-9]+)", add_craft),
     (r"remove ([a-zA-Z0-9]+)", remove_craft),
     (r"resolved", resolved),
+    (r"save[ ]*([a-zA-Z0-9\.\-]*)", save),
+    (r"load[ ]*([a-zA-Z0-9\.\-]*)", load),
     (r"([a-zA-Z0-9]+): intercept ([a-zA-Z0-9]+)", lambda m: set_interception_course(m.group(1), m.group(2))),
     (r"([a-zA-Z0-9]+): burn \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)", set_burn),  # X: burn (0.8, 1.0)
     (r"([a-zA-Z0-9]*):?[ ]*(burn) [\(]*([0-9\.\-]+)[g]", burn_brake_Xg),  # X: burn Xg
     (r"([a-zA-Z0-9]*):?[ ]*(brake) [\(]*([0-9\.]+)[g]", burn_brake_Xg),  # X: brake Xg
+    (r"([a-zA-Z0-9]+): pos [\(]*([0-9\.\-]+)[, ]*([0-9\.\-]+)[\)]*", set_position),  # x: pos (100, 200)
     (r"([a-zA-Z0-9]+): vel [\(]*([0-9\.\-]+)[, ]*([0-9\.\-]+)[\)]*", set_velocity),  # x: vel (100, 200)
     (r"([a-zA-Z0-9]+): show v ([0-9]+)[s]", show_velocity),  # X: show vel Ns
     (r"([a-zA-Z0-9]+): show vel ([0-9]+)[s]", show_velocity),  # X: show vel Ns
@@ -419,6 +501,7 @@ commands = (
     (r"run", run),
     (r"([\+]+)", zoom),
     (r"([\-]+)", zoom),
+    (r"error", lambda _: 1 // 0),
     (r"quit", lambda m: sys.exit()),
     (r"exit", lambda m: sys.exit()),
     (f"ls", lambda m: os.system("ls")),
@@ -441,10 +524,68 @@ def sigint_handler(signum, frame):
     if is_running:
         is_running = False
         return
+    if locked:
+        print()
+        return
     print()
     print("Bye")
     print(LIGHT_WHITE)
     sys.exit(1)
+
+def dotdotdot(text, pause):
+    #print(text, end=" ")
+    for t in text + " ":
+        print(chr(7), end="")
+        print(t, end="")
+        sys.stdout.flush()
+        time.sleep(0.1)
+    for _ in range(0, pause * 3):
+        # print(".", end="")
+        sys.stdout.flush()
+        time.sleep(0.1)
+    print()
+    sys.stdout.flush()
+    time.sleep(1)
+
+def lock(pause=0):
+    global locked
+    locked = True
+    print(RED, end="")
+    dotdotdot("SECURITY ALERT", pause)
+    dotdotdot("HACKING ATTEMPT DETECTED", pause)
+    dotdotdot("INTRUSION PROTOCOL A-1734 ACTIVATED", pause)
+    print(chr(7), end="")
+    print()
+    time.sleep(2)
+    print(chr(7), end="")
+    print()
+    time.sleep(1)
+    print(chr(7), end="")
+    print()
+    time.sleep(1)
+    print(chr(7), end="")
+    print(BLINK + "LOCKED")
+    time.sleep(1)
+    print(END)
+    print()
+    print("Enter password to unlock: ", end="")
+    sys.stdout.flush()
+    for line in sys.stdin:
+        if line.strip() == "password":
+            return
+        print("Enter password to unlock: ", end="")
+        sys.stdout.flush()
+    locked = False
+
+def generic_error(e):
+    # print("internal error:", e)
+    traceback.print_exc()
+    if development_mode:
+        sys.exit()
+    save(None, quiet=False)
+    print()
+    time.sleep(5)
+    lock(5)
 
 signal.signal(signal.SIGINT, sigint_handler)
 reset_view(None)
@@ -456,33 +597,41 @@ for line in sys.stdin:
     if line == "\n":
         tick(1)
         show(None)
+        if time.time() >= next_save:
+            save(None)
+            next_save = time.time() + save_frequency
     else:
         for (regexp, action) in commands:
             match = re.match(regexp, line)
             if match:
-                action(match)
+                try:
+                    action(match)
+                except Exception as e:
+                    generic_error(e)
                 break
     print_prompt()
     sys.stdout.flush()
 
-# git
-# move Craft and ... to craft.py
-# save and load stuff (capture errors, Ctrl-C too)
-# No need to resolve interception between torpedo/missile with the one firing them
-# ability to remove missiles and (other two characters objects)
-# add xxx
+# add: more crafts, torpedo/missiles, clean up use of "key" (read from file)
 #
 # max g as param to intercept command / max speed to intercept command / end-speed at intercept
+# set regular course
+#
+# Gate size (and other objects)
 #
 # set run-step
-# set regular course
-# show time when ticking
-# brake Xg, burn Xg [bearing +/- degrees]
-# show scale: |...........| == X km
-# Gate size (and other objects)
-# make all commands default to my_craft
-# missiles do not auto correct course?
+# show time when ticking / store time in file
+# brake/burn Xg with -/+ degrees
+#
+# General conversion of units: m, km, 42K km, 42M km, AU (1.496e+11 = 149.600.000 km ~ 150 km) [return as (N, "K")]
+# unit conversion for all output (acc, center, ...)
+#
+# load/save: narrow exception
 # -----------------------------------------------------------------------
+# load scenarios
+# set position more easily
+# fun sequences by specification (error, boot, ...)
+# make all commands default to my_craft
 # ring gate is 2 AU outside Uranus' orbit
 # inside the ring space / slow zone
 # Ring station
@@ -490,36 +639,35 @@ for line in sys.stdin:
 # roughly 1M km i diameter
 # https://expanse.fandom.com/wiki/Ring_Entities
 # change reality when passing through gate!
-# sensor flickers
+# sensor flickers when in ring space
 # max speed
+# unit interpretation of input
+# show: remove extra line after listing of crafts
+# fun use of ANSI codes
 # -----------------------------------------------------------------------
+# macro/tactical mode (combat lightning)
 # max speeds (torpedoes and missiles go crazy)
 # visualize overlapping crafts
 # cancel interception course if craft is removed
-# break tick on promixity alert
 # don't clear screen when updating (no problem: does not flicker)
 # missile/torpedo/(crafts) factory
 # craft: stock of torpedoes, counter missiles
 # Incorporate resolution rolls for torpedo impact, counter missiles (and PDCs)
-# cancel intecept course after reaching target?
+# cancel interception course after reaching target?
 # slow down when closing in on target to avoid overshooting [less relevant for torps]
-# curseses
+# ANSI to move cursor about and lots more
 # show "*" interception points
 # X: lay course: flip/and/burn, patrol A-B-C, orbit Y, intercept Y
-# visualize gate size
-# short commands
-# X: command (default X to me)
-# <return> repeats
+# short commands / unify syntax
 # how many dots to print in a traj?
 # get/create scaled images of crafts
-# unify syntax
 # let craft decide what to show in overview (will always allow hiding stuff)
-#
 # ------------------------------------------------------
+# strain warning
 # astroid, debris
 # exhaust bloom
 # orbits, sun, planets, moon, gravity (see ~/Download/planet_distance_chart.pdf)
-# repeat scale+/- until interupted
+# repeat scale+/- until interupted  / autoscale
 # lock: Enter password to unlock
 # X: EW(?) / Sensor detection
 # scan
@@ -527,3 +675,4 @@ for line in sys.stdin:
 # visualize stuff outside map
 # voice commands
 # boot sequence
+# client-server / web view
