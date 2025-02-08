@@ -63,7 +63,7 @@ def plot_trajectories(what):
 def show(match):
     me = get_craft("x")
     (columns, lines) = os.get_terminal_size()
-    size = (columns, lines - 15)
+    size = (columns, lines - len(crafts) - 9 - len(interceptions_to_be_resolved))
     offset = (size[0] // 2, size[1] // 2)
     what1 = dict()
     plot_trajectories(what1)
@@ -77,8 +77,7 @@ def show(match):
         out += "\n"
     os.system("clear")
     print(out)
-    print(f"scale 1:{scale}    |----------| = {scale * 10 // 1000} km")
-    print("center:", center)
+    print(f"center {center}   scale 1:{scale}    |----------| = {scale * 10 // 1000} km")
     for (dict_key, craft) in crafts.items():
         visual = craft.get_visual() if len(dict_key) == 1 else dict_key # hack
         speed = craft.get_speed()
@@ -330,16 +329,6 @@ def remove_craft(match):
         show(None)
         print(f"{visual} disappears in a puff of antimatter")
 
-def generate_torpedo_key():
-    global crafts
-    base = list(range(ord('0'), ord('9') + 1)) + list(range(ord('A'), ord('Z') + 1)) + list(range(ord('a'), ord('z') + 1))
-    found = False
-    while not found:
-        for key in base:
-            if chr(key) not in crafts:
-                return chr(key)
-    return None
-
 def fire_torpedo(match):
     global generic_torpedo
     me = get_craft(match.group(1))
@@ -347,15 +336,14 @@ def fire_torpedo(match):
     if me is None or target is None:
         return
     torpedo = deepcopy(generic_torpedo)
-    key = generate_torpedo_key()
+    key = generate_unique_key("0")
     torpedo.set_key(key)
     torpedo.set_visual(key)
     torpedo.set_ident("Torpedo " + key)
     torpedo.set_position(me.get_position())
     torpedo.set_velocity(me.get_velocity(0))
     torpedo.show_trajectory = False
-    torpedo.silence_interception_with.add(me.key)
-    me.silence_interception_with.add(torpedo.key)
+    torpedo.target = target
     crafts[torpedo.key] = torpedo
     if not set_interception_course(torpedo.key, target.key):
         print(f"Unable to target lock {target.get_visual()}")
@@ -379,9 +367,8 @@ def fire_missile(match):
     missile.set_position(me.get_position())
     missile.set_velocity(me.get_velocity(0))
     missile.show_trajectory = False
+    missile.target = target
     crafts[missile.key] = missile
-    missile.silence_interception_with.add(me.key)
-    me.silence_interception_with.add(missile.key)
     if not set_interception_course(missile.key, target.key):
         print(f"Unable to target lock {target.get_visual()}")
         return
@@ -398,16 +385,15 @@ def tick(seconds):
     interception = False
     for _ in range(0, seconds):
         [ craft.tick(1) for craft in crafts.values() ]
-        for craft1 in crafts.values():
-            for craft2 in crafts.values():
-                if craft1 == craft2 or get_distance(craft1.get_position(), craft2.get_position()) > 100 or craft1.silence_interception(craft2) or craft2.silence_interception(craft1):
-                    continue
+        check = [ (c1, c2) for c1 in crafts.values() for c2 in crafts.values() if c1 != c2 and get_distance(c1.get_position(), c2.get_position()) < 100 ]
+        for (craft1, craft2) in check:
+            if (isinstance(craft1, Craft) and isinstance(craft2, Craft)) or (isinstance(craft1, Weapon) and craft1.target == craft2):
                 interception = True
                 interceptions_to_be_resolved.add(tuple(sorted((craft1.key, craft2.key))))
         if interception:
             break
     [ craft.adjust_course() for craft in crafts.values() ]
-    # show(None)
+    show(None)
 
 def tick_handler(match):
     tick(1 if match.group(1) == "" else int(match.group(1)))
@@ -612,7 +598,9 @@ for line in sys.stdin:
     print_prompt()
     sys.stdout.flush()
 
-# add: more crafts, torpedo/missiles, clean up use of "key" (read from file)
+# add: easy setting of position for new crafts
+#
+# create non-ship objects, weapons & gate & planets & ...
 #
 # max g as param to intercept command / max speed to intercept command / end-speed at intercept
 # set regular course

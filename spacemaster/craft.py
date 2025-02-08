@@ -1,7 +1,7 @@
 from common import *
 import pickle
 
-class Craft:
+class Base:
     ident = None
     position = None
     velocity = None
@@ -15,7 +15,7 @@ class Craft:
     transponder = None
     course_handler = None
     course_arg = None
-    resolve = None
+    target = None
 
     def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
         self.ident = ident
@@ -95,73 +95,83 @@ class Craft:
         (ddx, ddy) = self.acceleration
         self.velocity = (dx + ddx * seconds, dy + ddy * seconds)
 
-    def silence_interception(self, other):
-        return other.key in self.silence_interception_with
-
     def __str__(self):
-        return f"{self.ident}: key={self.key} pos={self.position} velocity={self.velocity} burn={self.acceleration} traj={self.show_trajectory} transponder={self.transponder}"
+        return f"{self.ident}: key={self.key} pos={self.position} velocity={self.velocity} burn={self.acceleration} target={self.target.key if self.target else None}"
+
+class Craft(Base):
+    def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
+        super().__init__(ident, position, velocity, colour, key, visual, image, max_g)
+
+class Weapon(Base):
+    def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
+        super().__init__(ident, position, velocity, colour, key, visual, image, max_g)
 
 AU = 1.496e+11
-craft_templates = {
-    #                 ident, position, velocity, colour, key, visual, image, max_g):
-    "donnager": Craft("Donnager", (0, 0), (0, 0), RED, "D", "D", "Donnager_Render_1.png", 2),
-    "generic": Craft("Generic", (0, 0), (0, 0), LIGHT_WHITE, "Z", "Z", None, 2),
-}
-generic_torpedo = Craft("Torpedo", (0, 0), (0, 0), LIGHT_WHITE, "t", "t", None, 15)
-generic_missile = Craft("Missile", (0, 0), (0, 0), LIGHT_WHITE, None, ",", None, 15)   # None to replaced by uuid
+generic_torpedo = Weapon("Torpedo", (0, 0), (0, 0), LIGHT_WHITE, "t", "t", None, 15)
+generic_missile = Weapon("Missile", (0, 0), (0, 0), LIGHT_WHITE, None, ",", None, 15)
 crafts = dict()
 
-SMALL_CRAFT = 0
-LARGE_CRAFT = 1
-WEAPON = 2
-
-def generate_unique_key(kind=SMALL_CRAFT):
+def generate_unique_key(start="a"):
     global crafts
-    capital_letters = list(range(ord('A'), ord('Z') + 1))
-    small_letters = list(range(ord('a'), ord('z') + 1))
-    digits = list(range(ord('0'), ord('9') + 1))
-    if kind == LARGE_CRAFT:
-        base = capital_letters + small_letters + digits
-    elif kind == WEAPON:
-        base = digits + small_letters + capital_letters
-    else:
-        base = small_letters + capital_letters + digits
+    from_to = lambda a, b: list(range(ord(a), ord(b) + 1))
+    selection = list(map(chr, from_to('a', 'z') + from_to('A', 'Z') + from_to('0', '9')))
+    index = selection.index(start)
+    if index == -1:
+        index = 0
     found = False
-    while not found:
-        for key in base:
-            if chr(key) not in crafts:
-                return chr(key)
-    return key
+    for key in selection[index:] + selection[index:]:
+        if key not in crafts:
+            print(key, crafts.keys())
+            return key
+    return "!"
 
-def make_craft(key, name):
-    global crafts, craft_templates
+def make_craft(name, key=None, colour=None):
+    global crafts
     if key in crafts:
         print(f"key is already there")
-    if name not in craft_templates:
-        print(f"unknown craft {name}")
-    craft = copy.deepcopy(craft_templates[name])
-    craft.key = key
-    craft.character = key
-    craft.visual = key
+    name = name.lower()
+    ships = [filename for filename in os.listdir(SHIPS_PATH) if name in filename and filename.endswith(".png")]
+    if len(ships) == 0:
+        print(f"{name} is lost in space")
+        return
+    filename = ships[random.randint(0, len(ships) - 1)]
+    xs = filename[:-4].split("_")
+    match = re.match("([0-9]+)m", xs[-1])
+    if not match:
+        xs.append("50m")
+        size = 50
+    else:
+        size = int(match.group(1))
+    army = xs[0]
+    name = " ".join(xs[1:-1])
+    if not key:
+        key = name[0] if size < 100 else name[0].upper()
+    key = generate_unique_key(key)
+    if not colour:
+        colours = { "mcrn": RED, "unn": LIGHT_BLUE, "fn": LIGHT_PURPLE, "opa": YELLOW, "civil": LIGHT_GREEN, "protogen": LIGHT_GRAY }
+        colour = colours[army] if army in colours else LIGHT_WHITE
+    ident = name.capitalize() + " " + key
+    position = (0, 0)
+    velocity = (0, 0)
+    visual = key
+    image = filename
+    max_g = 2
+    craft = Craft(ident, position, velocity, colour, key, visual, image, max_g)
+    print(craft)
     return craft
-
-# TODO TODO TODO
-def make_generic_craft():
-    # generate key, generic colour
-    key = "TODO"
-    make_craft(key, "generic")
 
 def make_crafts():
     random.seed(42)
-    heroes = Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x", "x", None, 2) # Ospary
-    gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o", "o", None, 2)
-    donnager = make_craft("D", "donnager")
-    nathan_hale = Craft("Nathan Hale", (400, 600), (0, 0), LIGHT_BLUE, "N", "N", None, 2)
+    heroes = make_craft("ospary", "x", LIGHT_WHITE) # Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x", "x", None, 2) # Ospary
+    gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o", "o", None, 2) # TODO non-ship objects
+    donnager = make_craft("donnager")
+    nathan_hale = make_craft("leon")
+    # TODO: positions
+    #
     # uranus = Craft("Uranus", (-2 * AU / 1000, 0), (0, 0), GREEN, "U", "U", None, 2)
     # sun = Craft("Sun", (-21.2 * AU / 1000, 0), (0, 0), RED, "S", "S", None, 2)
     crafts = {craft.key: craft for craft in [heroes, gate, donnager, nathan_hale]}
     for craft in crafts.values():
         craft.position = (craft.position[0] * 1000, craft.position[1] * 1000)
+    # sys.exit()
     return crafts
-
-crafts = make_crafts()

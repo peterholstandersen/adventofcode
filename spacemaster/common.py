@@ -48,3 +48,5 @@ BG_CYAN = "\033[1;106m"
 # Bright versions starts at 100 (ends at 107)
 
 DEFAULT_COLOUR = END # LIGHT_WHITE
+
+SHIPS_PATH = "/home/peter/PycharmProjects/adventofcode/spacemaster/ships"
