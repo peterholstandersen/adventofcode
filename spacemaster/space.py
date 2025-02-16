@@ -1,8 +1,10 @@
 from common import *
 from craft import *
 
+simulated_time = datetime.datetime.now() + datetime.timedelta(2000)
+
 interceptions_to_be_resolved = set()
-crafts = dict()
+crafts = make_planets() # dict()
 prompt = scale = center = None
 is_running = False
 savefile = "space-" + str(int(time.time())) + ".pickle"
@@ -15,7 +17,8 @@ show_lock_sequence_on_generic_error = False
 def reset_view(match):
     global prompt, scale, center
     prompt = "> "
-    scale = 50000
+    # scale = 50000
+    scale = AU // 10
     center = (0, 0)
     for craft in crafts.values():
         craft.show_trajectory = True
@@ -398,26 +401,46 @@ def resolved(match):
     print("Resolved")
 
 def tick(seconds):
+    global simulated_time
     interception = False
     for _ in range(0, seconds):
-        [ craft.tick(1) for craft in crafts.values() ]
-        check = [ (c1, c2) for c1 in crafts.values() for c2 in crafts.values() if c1 != c2 and get_distance(c1.get_position(), c2.get_position()) < 100 ]
+        [craft.tick(1) for craft in crafts.values()]
+        simulated_time += datetime.timedelta(seconds=1)
+        check = [(c1, c2) for c1 in crafts.values() for c2 in crafts.values() if
+                 c1 != c2 and get_distance(c1.get_position(), c2.get_position()) < 100]
         for (craft1, craft2) in check:
-            if (isinstance(craft1, Craft) and isinstance(craft2, Craft)) or (isinstance(craft1, Weapon) and craft1.target == craft2):
+            if (isinstance(craft1, Craft) and isinstance(craft2, Craft)) or (
+                    isinstance(craft1, Weapon) and craft1.target == craft2):
                 interception = True
                 interceptions_to_be_resolved.add(tuple(sorted((craft1.key, craft2.key))))
         if interception:
             break
-    [ craft.adjust_course() for craft in crafts.values() ]
+    [craft.adjust_course() for craft in crafts.values()]
     show(None)
     return interception
 
 def tick_handler(match):
     tick(1 if match.group(1) == "" else int(match.group(1)))
 
+def fast_forward(step):
+    global is_running, simulated_time, crafts
+    is_running = True
+    while is_running:
+        simulated_time += datetime.timedelta(seconds=step)
+        set_day(crafts, simulated_time.timestamp() // 86400)
+        [craft.tick(step) for craft in crafts.values()]
+        print_prompt()
+        sys.stdout.flush()
+        time.sleep(0.1)
+        show(None)
+    save(None)
+
 def run(match):
     global is_running
     step = int(match.group(1)) if match.group(1) != "" else 1
+    if step > 100:
+        fast_forward(step)
+        return
     is_running = True
     while is_running:
         for _ in range(0, step):
@@ -428,20 +451,21 @@ def run(match):
         sys.stdout.flush()
         time.sleep(1)
         show(None)
+    save(None)
 
 # noinspection PyBroadException
 def save(match, quiet=False):
-    global savefile
+    global savefile, next_save, save_frequency
     filename = "save/" + (match.group(1) if match and match.group(1) != "" else savefile)
     if filename[-7:] != ".pickle":
         filename = filename + ".pickle"
     try:
         with open(filename, "wb") as file:
             crafts_copy = copy.deepcopy(crafts)
-            # [ craft.set_course_handler(None) for craft in crafts_copy.values() ]
             pickle.dump(crafts_copy, file)
         if not quiet:
             print("Saved", filename)
+        next_save = time.time() + save_frequency
         return True
     except:
         print(f"Error save to {filename}")
@@ -457,7 +481,6 @@ def load(filename):
             crafts.update(pickle.load(file))
         show(None)
         print("Loaded", filename)
-        # print("Autocorrection of interception courses cancelled (including missiles and torpedoes)")
     except:
         print(f"Error loading {filename}")
 
@@ -541,12 +564,12 @@ commands = (
     (r"\?", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
     (r"moria", lambda _: print("Sorry, games are not allowed right now.")),
     (r"scan", lambda _: print("You see nothing special.")),
-    (r".*", lambda _: print(error_msgs[random.randint(1, len(error_msgs)) if random.randint(0, 10) == 0 else 0])),
+    (r".*", lambda _: print(error_msgs[random.randint(1, len(error_msgs) - 1) if random.randint(0, 10) == 0 else 0])),
 )
 
 def print_prompt():
     global prompt
-    print((datetime.datetime.now() + datetime.timedelta(2000)).strftime("%Y-%m-%d %H:%M:%S") + prompt, end="")
+    print(simulated_time.strftime("%Y-%m-%d %H:%M:%S") + prompt, end="")
 
 def sigint_handler(signum, frame):
     global is_running
@@ -628,7 +651,6 @@ for line in sys.stdin:
         show(None)
         if time.time() >= next_save:
             save(None)
-            next_save = time.time() + save_frequency
     else:
         for (regexp, action) in commands:
             match = re.match(regexp, line)
@@ -645,16 +667,14 @@ for line in sys.stdin:
 #
 # test
 # make it easier to use! and to program!
-# create non-ship objects, weapons & gate & planets & ...
 # max g as param to intercept command / max speed to intercept command / end-speed at intercept
 # Gate size (and other objects)
 # inside the ring space / slow zone
-# navigation/tactical view
 # -----------------------------------------------------------------------
+# autocenter
 # unit conversion for all output (acc, center, ...)
 # General conversion of units: m, km, 42K km, 42M km, AU (1.496e+11 = 149.600.000 km ~ 150 km) [return as (N, "K")]
 # init script
-# fix time
 # load/save: narrow exception
 # store time in file
 # brake/burn Xg with -/+ degrees
@@ -677,7 +697,6 @@ for line in sys.stdin:
 # visualize overlapping crafts
 # cancel interception course if craft is removed
 # don't clear screen when updating (no problem: does not flicker)
-# missile/torpedo/(crafts) factory
 # craft: stock of torpedoes, counter missiles
 # Incorporate resolution rolls for torpedo impact, counter missiles (and PDCs)
 # cancel interception course after reaching target?
@@ -693,7 +712,6 @@ for line in sys.stdin:
 # strain warning
 # astroid, debris
 # exhaust bloom
-# orbits, sun, planets, moon, gravity (see ~/Download/planet_distance_chart.pdf)
 # repeat scale+/- until interupted  / autoscale
 # lock: Enter password to unlock
 # X: EW(?) / Sensor detection

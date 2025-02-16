@@ -106,6 +106,14 @@ class Weapon(Base):
     def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
         super().__init__(ident, position, velocity, colour, key, visual, image, max_g)
 
+class Planet(Base):
+    def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
+        super().__init__(ident, position, velocity, colour, key, visual, image, max_g)
+
+class Star(Base):
+    def __init__(self, ident, position, velocity, colour, key, visual, image, max_g):
+        super().__init__(ident, position, velocity, colour, key, visual, image, max_g)
+
 AU = 1.496e+11
 generic_torpedo = Weapon("Torpedo", (0, 0), (0, 0), LIGHT_WHITE, "t", "t", None, 15)
 generic_missile = Weapon("Missile", (0, 0), (0, 0), LIGHT_WHITE, None, ",", None, 15)
@@ -151,3 +159,34 @@ def make_craft(crafts, name, key=None, colour=None):
     max_g = 2
     craft = Craft(ident, position, velocity, colour, key, visual, image, max_g)
     return craft
+
+planets = [
+    ("Mercury",  0.4, "m", LIGHT_RED, 88), # Solid red, 2.4M km (radius)
+    ("Venus",    0.7, "v", YELLOW, 225), # Cream, 6M km
+    ("Earth",    1.0, "e", LIGHT_BLUE, 365), # Clear blue, 6.4M km
+    ("Mars",     1.5, "M", RED, 687), # Clear red, 3.4M km
+    # Belt       2.8 Black      (Ceres), 490 km
+    ("Ceres",    2.8, "c", DARK_GRAY, 1682),
+    ("Jupiter",  5.2, "J", YELLOW, 4333), # Orange, 70M km
+    ("Saturn",   9.6, "S", YELLOW, 10759), # Clear gold, 58M km
+    ("Uranus",  19.2, "U", BLUE, 30687), # Dark blue, 15.8M km
+    ("Neptune", 30.0, "N", LIGHT_BLUE, 60190), # Light blue, 15.3M km
+    ("Pluto",   39.5, "p", DARK_GRAY, 90560), #  29.7-39.5-49.3 (closest-average-most_distant) Brown. 2.4K km
+    # Gate 21.2
+]
+
+def set_day(crafts, day):
+    for (planet, distance, key, _, orbit) in planets:
+        if not isinstance(crafts[key], Planet):
+            print(f"set_day: skipping {planet}. {crafts[key].get_visual()} is not a planet")
+            continue
+        angle = math.radians(360) * (float(day % orbit) / float(orbit))
+        x = math.sin(angle) * distance * AU
+        y = math.cos(angle) * distance * AU
+        crafts[key].set_position((x, y))
+
+def make_planets():
+    col = LIGHT_WHITE
+    psst = { "*": Star("Sun", (0, 0), (0, 0), RED, "*", "*", None, None) }
+    psst.update({ key: Planet(name, (dist * AU, 0), (0, 0), colour, key, key, None, None) for (name, dist, key, colour, _) in planets })
+    return psst
