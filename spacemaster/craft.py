@@ -109,26 +109,19 @@ class Weapon(Base):
 AU = 1.496e+11
 generic_torpedo = Weapon("Torpedo", (0, 0), (0, 0), LIGHT_WHITE, "t", "t", None, 15)
 generic_missile = Weapon("Missile", (0, 0), (0, 0), LIGHT_WHITE, None, ",", None, 15)
-crafts = dict()
 
-def generate_unique_key(start="a"):
-    global crafts
+def generate_unique_key(crafts, start="a"):
     from_to = lambda a, b: list(range(ord(a), ord(b) + 1))
     selection = list(map(chr, from_to('a', 'z') + from_to('A', 'Z') + from_to('0', '9')))
-    index = selection.index(start)
-    if index == -1:
-        index = 0
+    index = selection.index(start) if start in selection else 0
     found = False
-    for key in selection[index:] + selection[index:]:
+    for key in selection[index:] + selection[:index]:
         if key not in crafts:
             print(key, crafts.keys())
             return key
     return "!"
 
-def make_craft(name, key=None, colour=None):
-    global crafts
-    if key in crafts:
-        print(f"key is already there")
+def make_craft(crafts, name, key=None, colour=None):
     name = name.lower()
     ships = [filename for filename in os.listdir(SHIPS_PATH) if name in filename and filename.endswith(".png")]
     if len(ships) == 0:
@@ -146,7 +139,7 @@ def make_craft(name, key=None, colour=None):
     name = " ".join(xs[1:-1])
     if not key:
         key = name[0] if size < 100 else name[0].upper()
-    key = generate_unique_key(key)
+    key = generate_unique_key(crafts, key)
     if not colour:
         colours = { "mcrn": RED, "unn": LIGHT_BLUE, "fn": LIGHT_PURPLE, "opa": YELLOW, "civil": LIGHT_GREEN, "protogen": LIGHT_GRAY }
         colour = colours[army] if army in colours else LIGHT_WHITE
@@ -157,21 +150,4 @@ def make_craft(name, key=None, colour=None):
     image = filename
     max_g = 2
     craft = Craft(ident, position, velocity, colour, key, visual, image, max_g)
-    print(craft)
     return craft
-
-def make_crafts():
-    random.seed(42)
-    heroes = make_craft("ospary", "x", LIGHT_WHITE) # Craft("Heroes", (-1000, 500), (0, 0), LIGHT_WHITE, "x", "x", None, 2) # Ospary
-    gate = Craft("Gate", (0, 0), (0, 0), CYAN, "o", "o", None, 2) # TODO non-ship objects
-    donnager = make_craft("donnager")
-    nathan_hale = make_craft("leon")
-    # TODO: positions
-    #
-    # uranus = Craft("Uranus", (-2 * AU / 1000, 0), (0, 0), GREEN, "U", "U", None, 2)
-    # sun = Craft("Sun", (-21.2 * AU / 1000, 0), (0, 0), RED, "S", "S", None, 2)
-    crafts = {craft.key: craft for craft in [heroes, gate, donnager, nathan_hale]}
-    for craft in crafts.values():
-        craft.position = (craft.position[0] * 1000, craft.position[1] * 1000)
-    # sys.exit()
-    return crafts

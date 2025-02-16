@@ -2,7 +2,7 @@ from common import *
 from craft import *
 
 interceptions_to_be_resolved = set()
-crafts = make_crafts()
+crafts = dict()
 prompt = scale = center = None
 is_running = False
 savefile = "space-" + str(int(time.time())) + ".pickle"
@@ -10,8 +10,7 @@ save_frequency = 10
 next_save = time.time() + save_frequency
 locked = False
 
-development_mode = True
-# development_mode = False
+show_lock_sequence_on_generic_error = False
 
 def reset_view(match):
     global prompt, scale, center
@@ -48,7 +47,7 @@ def solve(a, b, c):
 def view_craft_from_file(match):
     craft = get_craft(match.group(1))
     if craft:
-        os.system(f"eog -g {craft.image}")
+        os.system(f"eog -g ships/{craft.image}")
 
 def get_craft(name, default="x"):
     if name == "":
@@ -78,6 +77,9 @@ def show(match):
     os.system("clear")
     print(out)
     print(f"center {center}   scale 1:{scale}    |----------| = {scale * 10 // 1000} km")
+    if me is None:
+        print()
+        return
     for (dict_key, craft) in crafts.items():
         visual = craft.get_visual() if len(dict_key) == 1 else dict_key # hack
         speed = craft.get_speed()
@@ -99,6 +101,20 @@ def show(match):
         print()
     print(RED + "\n".join([f"Resolve interception between {c1} and {c2}" for (c1, c2) in interceptions_to_be_resolved]) + DEFAULT_COLOUR)
     print()
+
+def set_course(match):
+    me = get_craft(match.group(1))
+    x2 = float(match.group(2))
+    y2 = float(match.group(3))
+    (x1, y1) = me.get_position()
+    (dx, dy) = (x2 - float(x1), y2 - float(y1))
+    distance = sqrt(dx * dx + dy * dy)
+    (dx, dy) = (dx / distance, dy / distance)  # unit vector
+    g = 1
+    (dx, dy) = (dx * g * 9.81, dy * g * 9.81)
+    me.set_acceleration((dx, dy))
+    show(None)
+    print(f"{me.get_visual()} burning {g}g for ({int(x2)}, {int(y2)})")
 
 def set_interception_course(me, target):
     me = get_craft(me)
@@ -336,7 +352,7 @@ def fire_torpedo(match):
     if me is None or target is None:
         return
     torpedo = deepcopy(generic_torpedo)
-    key = generate_unique_key("0")
+    key = generate_unique_key(crafts, "0")
     torpedo.set_key(key)
     torpedo.set_visual(key)
     torpedo.set_ident("Torpedo " + key)
@@ -394,15 +410,22 @@ def tick(seconds):
             break
     [ craft.adjust_course() for craft in crafts.values() ]
     show(None)
+    return interception
 
 def tick_handler(match):
     tick(1 if match.group(1) == "" else int(match.group(1)))
 
 def run(match):
     global is_running
+    step = int(match.group(1)) if match.group(1) != "" else 1
     is_running = True
     while is_running:
-        tick(1)
+        for _ in range(0, step):
+            if tick(1):
+                is_running = False
+                break
+        print_prompt()
+        sys.stdout.flush()
         time.sleep(1)
         show(None)
 
@@ -419,23 +442,32 @@ def save(match, quiet=False):
             pickle.dump(crafts_copy, file)
         if not quiet:
             print("Saved", filename)
+        return True
     except:
         print(f"Error save to {filename}")
+        return False
 
-# noinspection PyBroadException
 def load(filename):
-    global savefile
+    global savefile, crafts
     filename = "save/" + (match.group(1) if match and match.group(1) != "" else savefile)
     if filename[-7:] != ".pickle":
         filename = filename + ".pickle"
     try:
         with open(filename, "rb") as file:
-            crafts = pickle.load(file)
+            crafts.update(pickle.load(file))
         show(None)
         print("Loaded", filename)
         # print("Autocorrection of interception courses cancelled (including missiles and torpedoes)")
     except:
         print(f"Error loading {filename}")
+
+def clear(match):
+    global crafts
+    if save(None, quiet=False):
+        show(None)
+        print("The world disappears in a magic puff of purple smoke")
+    else:
+        print("Could not delete the world")
 
 hide = ["su", "exit", ".*", "\\?"]
 
@@ -448,11 +480,20 @@ error_msgs = (
 )
 
 def add_craft(match):
+    global crafts
     key = match.group(1)
     name = match.group(2)
-    craft = make_craft(key, name)
+    if key in crafts:
+        print(f"There can only be one {crafts[key].get_visual()}")
+        return
+    craft = make_craft(crafts, name, key)
     if craft:
         crafts[key] = craft
+        min_x = int(min([craft.position[0] for craft in crafts.values()]))
+        max_x = int(max([craft.position[0] for craft in crafts.values()]))
+        min_y = int(min([craft.position[1] for craft in crafts.values()]))
+        max_y = int(max([craft.position[1] for craft in crafts.values()]))
+        craft.set_position((randint(min_x, max_x), randint(min_y, max_y)))
         show(None)
         print(f"{craft.get_visual()} appears in a puff of matter")
 
@@ -468,7 +509,9 @@ commands = (
     (r"resolved", resolved),
     (r"save[ ]*([a-zA-Z0-9\.\-]*)", save),
     (r"load[ ]*([a-zA-Z0-9\.\-]*)", load),
+    (r"clear", clear),
     (r"([a-zA-Z0-9]+): intercept ([a-zA-Z0-9]+)", lambda m: set_interception_course(m.group(1), m.group(2))),
+    (r"([a-zA-Z0-9]*):?[ ]*course \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)", set_course),  # X: course (100, 200)
     (r"([a-zA-Z0-9]+): burn \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)", set_burn),  # X: burn (0.8, 1.0)
     (r"([a-zA-Z0-9]*):?[ ]*(burn) [\(]*([0-9\.\-]+)[g]", burn_brake_Xg),  # X: burn Xg
     (r"([a-zA-Z0-9]*):?[ ]*(brake) [\(]*([0-9\.]+)[g]", burn_brake_Xg),  # X: brake Xg
@@ -484,13 +527,13 @@ commands = (
     (r"([a-zA-Z0-9]*):?[ ]*torp[edo]* ([A-Za-z0-9]+)", fire_torpedo),  # [X: ]torpedo Y
     (r"([a-zA-Z0-9]*):?[ ]*mis[sile]* ([A-Za-z0-9]+)", fire_missile),  # [X: ]missile Y")
     (r"tick[ ]*(\-?[0-9]*)", tick_handler),
-    (r"run", run),
+    (r"run[ ]*([0-9]*)", run),
     (r"([\+]+)", zoom),
     (r"([\-]+)", zoom),
     (r"error", lambda _: 1 // 0),
     (r"quit", lambda m: sys.exit()),
     (r"exit", lambda m: sys.exit()),
-    (f"ls", lambda m: os.system("ls")),
+    (f"ls", lambda m: os.system("ls -F ships")),
     (f"who", lambda m: os.system("who")),
     (r"reset", reset_view),
     (r"su", lambda _: set_prompt("# ")),
@@ -564,14 +607,14 @@ def lock(pause=0):
     locked = False
 
 def generic_error(e):
-    # print("internal error:", e)
     traceback.print_exc()
-    if development_mode:
+    if show_lock_sequence_on_generic_error:
+        save(None, quiet=False)
+        print()
+        time.sleep(5)
+        lock(5)
+    else:
         sys.exit()
-    save(None, quiet=False)
-    print()
-    time.sleep(5)
-    lock(5)
 
 signal.signal(signal.SIGINT, sigint_handler)
 reset_view(None)
@@ -598,30 +641,26 @@ for line in sys.stdin:
     print_prompt()
     sys.stdout.flush()
 
-# add: easy setting of position for new crafts
+# make stuff for game session
 #
+# test
+# make it easier to use! and to program!
 # create non-ship objects, weapons & gate & planets & ...
-#
 # max g as param to intercept command / max speed to intercept command / end-speed at intercept
-# set regular course
-#
 # Gate size (and other objects)
-#
-# set run-step
-# show time when ticking / store time in file
-# brake/burn Xg with -/+ degrees
-#
-# General conversion of units: m, km, 42K km, 42M km, AU (1.496e+11 = 149.600.000 km ~ 150 km) [return as (N, "K")]
-# unit conversion for all output (acc, center, ...)
-#
-# load/save: narrow exception
+# inside the ring space / slow zone
+# navigation/tactical view
 # -----------------------------------------------------------------------
-# load scenarios
-# set position more easily
+# unit conversion for all output (acc, center, ...)
+# General conversion of units: m, km, 42K km, 42M km, AU (1.496e+11 = 149.600.000 km ~ 150 km) [return as (N, "K")]
+# init script
+# fix time
+# load/save: narrow exception
+# store time in file
+# brake/burn Xg with -/+ degrees
 # fun sequences by specification (error, boot, ...)
 # make all commands default to my_craft
 # ring gate is 2 AU outside Uranus' orbit
-# inside the ring space / slow zone
 # Ring station
 # 1373 gates
 # roughly 1M km i diameter
