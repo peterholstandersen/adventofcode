@@ -1,0 +1,23 @@
+# Craft B Behemoth  (21.2 * AU + 1000000, 600000) (0, 0) RED 2
+# Craft m Mowteng   (21.2 * AU - 42K km, 63K km)  (0, 0) RED 2
+# Craft s Scirocco  (21.2 * AU - 40K km, 66K km)  (0, 0) RED 2
+
+# mcrn_barkeith.png mcrn_donnager_476m.png mcrn_heavy_frigate.png mcrn_mowteng.png mcrn_ospary_23m.png mcrn_resupply_ship_109m.png mcrn_scirocco_200m.png
+
+# Craft x Ospary    (21.2 * AU - 100000K km, 0)       (0, 0) LIGHT_WHITE 2
+
+Craft x Ospary    (21.2 * AU - 100K km, 0)       (0, 0) LIGHT_WHITE 2
+
+Craft o Ring      (21.2 * AU, 0)                 (0, 0) LIGHT_CYAN 2
+
+Craft b Barkeith  (21.2 * AU + 62K km, 42K km)  (0, 0) RED 2
+Craft D Donnager  (21.2 * AU + 47K km,  3K km)  (0, 0) RED 2
+Craft f Frigate   (21.2 * AU + 12K km, 10K km)  (0, 0) RED 2
+
+Craft L Leonideas (21.2 * AU - 35K km, -53K km)  (0, 0) LIGHT_BLUE 2
+Craft T Truman    (21.2 * AU + 36K km, -20K km)  (0, 0) LIGHT_BLUE 2
+Craft R Truman    (21.2 * AU + 11K km, -17K km)  (0, 0) LIGHT_BLUE 2
+
+Craft B Behemoth  (21.2 * AU - 25K km,   1K km)   (0, 0) YELLOW 2
+Craft a Artemis   (21.2 * AU - 54K km,  40K km)   (0, 0) YELLOW 2
+Craft p Pella     (21.2 * AU - 87K km, -30K km)   (0, 0) YELLOW 2

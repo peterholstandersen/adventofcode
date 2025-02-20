@@ -1,0 +1,36 @@
+# Start me Mercury 0.4  LIGHT_RED     88
+
+Star * Sun (0, 0) (0, 0) RED 696 star_sun.png
+Star + Proxima_Centauri (0, 268744 * AU) (0, 0) RED 1 star_proxima_centauri.png
+
+# Planet: key, name, distance from Sun (AU), colour, orbit time (days), radius (M km)
+
+Planet me Mercury 0.4  LIGHT_RED     88
+Planet v  Venus   0.7  YELLOW       225
+Planet e  Earth   1.0  LIGHT_BLUE   365
+Planet ma Mars    1.5  RED          687
+Planet c  Ceres   2.8  DARK_GRAY   1682
+Planet J  Jupiter 5.2  YELLOW      4333
+Planet S  Saturn  9.6  YELLOW     10759
+Planet U  Uranus 19.2  BLUE       30687
+Planet N  Neptune 30.0 LIGHT_BLUE 60190
+Planet p  Pluto   39.5 DARK_GRAY  90560
+
+# Craft: key, name, position, velocity, colour, max_g
+# image filename is derived from name (matches lowercase)
+# a new is generated if the given already exists
+
+Craft B Behemoth  (21.2 * AU + 1000000, 600000) (0, 0) RED 2
+
+#    ("Mercury",  0.4, "me", LIGHT_RED, 88), # Solid red, 2.4M km (radius)
+#    ("Venus",    0.7, "v", YELLOW, 225), # Cream, 6M km
+#    ("Earth",    1.0, "e", LIGHT_BLUE, 365), # Clear blue, 6.4M km
+#    ("Mars",     1.5, "ma", RED, 687), # Clear red, 3.4M km
+#    # Belt       2.8 Black      (Ceres), 490 km
+#    ("Ceres",    2.8, "c", DARK_GRAY, 1682),
+#    ("Jupiter",  5.2, "J", YELLOW, 4333), # Orange, 70M km
+#    ("Saturn",   9.6, "S", YELLOW, 10759), # Clear gold, 58M km
+#    ("Uranus",  19.2, "U", BLUE, 30687), # Dark blue, 15.8M km
+#    ("Neptune", 30.0, "N", LIGHT_BLUE, 60190), # Light blue, 15.3M km
+#    ("Pluto",   39.5, "p", DARK_GRAY, 90560), #  29.7-39.5-49.3 (closest-average-most_distant) Brown. 2.4K km
+# Gate 21.2
