@@ -150,7 +150,7 @@ def make_craft(crafts, name, key=None, colour=None):
     if not colour:
         colours = { "mcrn": RED, "unn": LIGHT_BLUE, "fn": LIGHT_PURPLE, "opa": YELLOW, "civil": LIGHT_GREEN, "protogen": LIGHT_GRAY }
         colour = colours[army] if army in colours else LIGHT_WHITE
-    ident = name.capitalize() + " " + key
+    ident = name.capitalize()
     position = (0, 0)
     velocity = (0, 0)
     visual = key

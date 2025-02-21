@@ -82,7 +82,7 @@ def make_view_text(crafts):
         out += "\n"
         return out
     for (dict_key, craft) in crafts.items():
-        if scale < AU / 1000 and isinstance(craft, Planet):
+        if scale < AU / 1000 and (isinstance(craft, Planet) or isinstance(craft, Star)):
             continue
         visual = craft.get_visual() if len(dict_key) == 1 else dict_key # hack
         speed = craft.get_speed()
@@ -90,12 +90,12 @@ def make_view_text(crafts):
         if speed > 1000:
             speed = speed / 1000
             unit = "km/s"
-        speed = f"{speed:.1f} {unit}"
+        speed = f"{speed:.0f} {unit}"
         (ddx, ddy) = craft.get_acceleration()
         acc = sqrt(ddx * ddx + ddy * ddy)
-        out += f"{visual}: {craft.ident:<20} {speed:>10}  {acc:>4.1f} m/s2"
+        out += f"{visual}: {craft.ident:<16} {speed:>15} {acc/9.81:>3.0f} g"
         if craft != me:
-            out += f"  {distance_as_text(me, craft)}"
+            out += f"  {distance_as_text(me, craft):>10}"
             time = get_interception_time(me, craft)
             if time:
                 out += f"  tti={time}s"
@@ -249,9 +249,16 @@ def show_interception_time(match):
         return
     time = get_interception_time(me, target)
     if time:
-        print(f"{me.get_visual()} intercepts {target.get_visual()} in {time} seconds")
+        print(f"{me.get_visual()} intercepts {target.get_visual()} in {time} seconds at speed {me.get_speed(time)} m/s")
     else:
         print(f"{me.get_visual()} will not intercept {target.get_visual()}")
+
+def show_projection(match):
+    me = get_craft(match.group(1))
+    time = int(match.group(2))
+    if me is None:
+        return
+    print(f"In {time} seconds {me.visual} will be at {me.get_position(time)} at speed {me.get_speed(time)} m/s")
 
 def set_scale(match):
     global scale
@@ -331,6 +338,23 @@ def set_position(match):
         return
     craft.set_position((float(match.group(2)), float(match.group(3))))
     show(None)
+
+def set_relative_position(match):
+    craft = get_craft(match.group(1))
+    target = get_craft(match.group(2))
+    if not craft or not target:
+        return
+    rad = math.radians(int(match.group(3)))
+    try:
+        dist = eval(match.group(4).replace("M", "* 1000000").replace("K", "* 1000").replace("km", "* 1000"))
+    except:
+        print(f"Unable to evaluate: {match.group(4)}")
+        return
+    (x, y) = target.get_position()
+    (x1, y1) = (round(x + math.sin(rad) * dist), round(y + math.cos(rad) * dist))
+    craft.set_position((x1, y1))
+    show(None)
+    print(f"{craft.visual}: setting position to ({x1}, {y1})")
 
 def set_velocity(match):
     craft = get_craft(match.group(1))
@@ -456,6 +480,16 @@ def resolved(match):
     interceptions_to_be_resolved = set()
     show(None)
     print("Resolved")
+
+def do_eval(match):
+    if match.group(1) == "":
+        print("Nothing to evaluate")
+        return
+    try:
+        x = eval(match.group(1))
+        print(f"Result: {x}")
+    except:
+        traceback.print_exc()
 
 def tick(seconds):
     global simulated_time, center, autocenter
@@ -591,6 +625,7 @@ def load_text(match):
         craft.set_position((eval(x), eval(y)))  # TODO: catch error
         craft.set_velocity((eval(dx), eval(dy)))
         craft.colour = eval(colour)
+        craft.max_g = float(max_g)
         crafts[craft.key] = craft
 
 def clear(match):
@@ -598,7 +633,7 @@ def clear(match):
     if save(None, quiet=False):
         crafts = dict()
         show(None)
-        print("The world disappears in a magic puff of purple smoke")
+        print("The world disappears in a puff of purple haze")
     else:
         print("Could not delete the world")
 
@@ -631,7 +666,7 @@ error_msgs = (
 # huba = [ "view", "info", "trajectory", "remove", "intercept <target>", "burn <direction>", "burn <n>g", "brake <n>g",
 #         "position <pair>", "velocity <pair>", "distance <target>", "torpedo <target>", "missile <target>" ]
 
-hide = [".*"]
+hide = [ ".*" ]
 
 commands = (
     (r"show", show),
@@ -655,7 +690,7 @@ commands = (
     (f"who", lambda m: os.system("who")),
     (r"reset", reset_view),
     (r"su", lambda _: lock(5)),
-    (r"\?", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
+    (r"help", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
     (r"moria", lambda _: print("Sorry, games are not allowed right now.")),
     (r"scan", lambda _: print("You see nothing special.")),
     (r"info ([a-zA-Z0-9]+)", info),
@@ -664,6 +699,7 @@ commands = (
     (r"lock", lambda _: do_password()),
     (r"exit", lambda _: save_and_exit()),
     (r"quit", lambda _: save_and_exit()),
+    (r"([a-zA-Z0-9]*):?[ ]*pro[ject]*\s+([0-9]+)", show_projection),
     (r"([a-zA-Z0-9]*):?[ ]*time ([a-zA-Z0-9]+)", show_interception_time),
     (r"([a-zA-Z0-9]*):?[ ]*traj[ectory]*", toggle_trajectory),
     (r"([a-zA-Z0-9]*):?[ ]*remove", remove_craft),
@@ -675,10 +711,13 @@ commands = (
     (r"([a-zA-Z0-9]*):?[ ]*(burn) ([0-9\.\-]+)[g]", burn_brake_Xg),
     (r"([a-zA-Z0-9]*):?[ ]*(brake) ([0-9\.]+)[g]", burn_brake_Xg),
     (r"([a-zA-Z0-9]*):?[ ]*pos[ition]* \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)*", set_position),
+    (r"([a-zA-Z0-9]*):?[ ]*pos[ition]* ([a-zA-Z0-9\+\*]+)\s+([0-9]+)\s+([0-9\+\-KMkm\s]+)", set_relative_position),
     (r"([a-zA-Z0-9]*):?[ ]*vel[ocity]* \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)*", set_velocity),
     (r"([a-zA-Z0-9]*):?[ ]*dist[ance]* ([A-Za-z0-9]+)", show_distance),
     (r"([a-zA-Z0-9]*):?[ ]*torp[edo]* ([A-Za-z0-9]+)", fire_torpedo),
     (r"([a-zA-Z0-9]*):?[ ]*mis[sile]* ([A-Za-z0-9]+)", fire_missile),
+    (r"\?(.*)", do_eval),
+    (r":(.*)", lambda match: os.system(match.group(1))),
     (r".*", lambda _: print(error_msgs[random.randint(1, len(error_msgs) - 1) if random.randint(0, 10) == 0 else 0])),
 )
 
@@ -751,6 +790,7 @@ def generic_error(e):
         return
 
 load_text("planets") # hack to avoid overlapping keys (planets/stars) does not check
+load_text("mcrn")
 signal.signal(signal.SIGINT, sigint_handler)
 reset_view(None)
 show(None)
@@ -781,15 +821,20 @@ while True:
     print("\nUse 'exit' to quit.")
 
 # make stuff for game session
-# course still not nice (must flip-and-burn) and correct for moving target [max speed]
+# calc flip-and-burn time
+#
+# x: pos center degrees distance
+# x: vel degrees speed
+#
+# course still not nice (must flip-and-burn) and correct for moving target [max speed in ring (otherwise speed of light)], time XXX should show speed a time XXX
 #
 # hidden crafts
 # max g as param to intercept command / max speed to intercept command / end-speed at intercept
-# Gate size (and other objects)
 # inside the ring space / slow zone
 # test
 # make it easier to program
 # -----------------------------------------------------------------------
+# Gate size (and other objects)
 # clean up keys for load_text (planets and stars overrides)
 # only show "crafts" in view / tac list
 # font with aspect ratio 1

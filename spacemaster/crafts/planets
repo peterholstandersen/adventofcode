@@ -5,10 +5,10 @@ Star + Proxima_Centauri (0, 268744 * AU) (0, 0) RED 1 star_proxima_centauri.png
 
 # Planet: key, name, distance from Sun (AU), colour, orbit time (days), radius (M km)
 
-Planet me Mercury 0.4  LIGHT_RED     88
+Planet m  Mercury 0.4  LIGHT_RED     88
 Planet v  Venus   0.7  YELLOW       225
 Planet e  Earth   1.0  LIGHT_BLUE   365
-Planet ma Mars    1.5  RED          687
+Planet M  Mars    1.5  RED          687
 Planet c  Ceres   2.8  DARK_GRAY   1682
 Planet J  Jupiter 5.2  YELLOW      4333
 Planet S  Saturn  9.6  YELLOW     10759
