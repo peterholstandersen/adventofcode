@@ -12,15 +12,9 @@ Planet M  Mars    1.5  RED          687
 Planet c  Ceres   2.8  DARK_GRAY   1682
 Planet J  Jupiter 5.2  YELLOW      4333
 Planet S  Saturn  9.6  YELLOW     10759
-Planet U  Uranus 19.2  BLUE       30687
+Planet U  Uranus 19.2  LIGHT_CYAN 30687
 Planet N  Neptune 30.0 LIGHT_BLUE 60190
 Planet p  Pluto   39.5 DARK_GRAY  90560
-
-# Craft: key, name, position, velocity, colour, max_g
-# image filename is derived from name (matches lowercase)
-# a new is generated if the given already exists
-
-Craft B Behemoth  (21.2 * AU + 1000000, 600000) (0, 0) RED 2
 
 #    ("Mercury",  0.4, "me", LIGHT_RED, 88), # Solid red, 2.4M km (radius)
 #    ("Venus",    0.7, "v", YELLOW, 225), # Cream, 6M km

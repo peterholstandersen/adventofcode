@@ -3,7 +3,6 @@ from craft import *
 
 simulated_time = datetime.datetime.now() + datetime.timedelta(2000)
 interceptions_to_be_resolved = set()
-# crafts = make_planets()
 crafts = dict()
 prompt = scale = center = None
 is_running = False
@@ -11,21 +10,21 @@ savefile = "space-" + str(int(time.time())) + ".pickle"
 save_frequency = 10
 next_save = time.time() + save_frequency
 locked = False
-show_lock_sequence_on_generic_error = False
+show_lock_sequence_on_generic_error = True
 tactical_scale = 2000000
 navigation_scale = AU // 10
-exit_on_ctrl_c = True
+exit_on_ctrl_c = False
 inside_ring = False
 exit_on_error = False
-tick_on_return = 1
 autocenter = None
 
 def reset_view(match):
     global crafts, prompt, scale, center
     prompt = "> "
-    # scale = navigation_scale
-    scale = tactical_scale
-    center = (21.2 * AU, 0) # gate
+    # scale = tactical_scale
+    # center = (21.2 * AU, 0)  # gate
+    scale = navigation_scale
+    center = (0, 0)
     for craft in crafts.values():
         craft.show_trajectory = True
     set_day(crafts, simulated_time.timestamp() // 86400)
@@ -76,14 +75,17 @@ def plot_trajectories(what):
 
 def make_view_text(crafts):
     out = ""
-    out += f"center {autocenter if autocenter else center}   scale 1:{scale}    |----------| = {scale * 10 // 1000} km\n"
+    out += f"{get_time_text()}   Center {autocenter if autocenter else center}   Scale # = {format_distance(scale)}\n"
     me = get_craft("x")
     if me is None:
         out += "\n"
         return out
     for (dict_key, craft) in crafts.items():
-        if scale < AU / 1000 and (isinstance(craft, Planet) or isinstance(craft, Star)):
-            continue
+        if dict_key != "x":
+            if scale < AU / 1000 and (isinstance(craft, Planet) or isinstance(craft, Star)):
+                continue
+            if scale > AU / 1000 and (isinstance(craft, Craft) or isinstance(craft, Weapon)):
+                continue
         visual = craft.get_visual() if len(dict_key) == 1 else dict_key # hack
         speed = craft.get_speed()
         unit = "m/s"
@@ -99,18 +101,20 @@ def make_view_text(crafts):
             time = get_interception_time(me, craft)
             if time:
                 out += f"  tti={time}s"
-                if distance(me.get_position(), craft.get_position()) < 100000:
-                    out += RED + BLINK + "  PROXIMITY ALERT" + DEFAULT_COLOUR
+            if distance(me.get_position(), craft.get_position()) <= 1000000: # 1000 km
+                out += RED + BLINK + "  PROXIMITY ALERT" + DEFAULT_COLOUR
         out += "\n"
     out += RED + "\n".join([f"Resolve interception between {c1} and {c2}" for (c1, c2) in interceptions_to_be_resolved]) + DEFAULT_COLOUR
     return out
-
 
 def show(match):
     global scale, center
     view_text = make_view_text(crafts)
     center_xy = center
-    (columns, lines) = os.get_terminal_size()
+    try:
+        (columns, lines) = os.get_terminal_size()
+    except OSError:
+        (columns, lines) = (80, 10)
     size_cl = (columns, lines - view_text.count("\n") - 4)
     offset_cl = (size_cl[0] // 2, size_cl[1] // 2)
     cl_to_xy = lambda cl: ((cl[0] - offset_cl[0]) * scale + center_xy[0], (offset_cl[1] - cl[1]) * scale - center_xy[1])
@@ -147,10 +151,6 @@ def set_course_helper(me, x2, y2, target=None):
     g = 1
     (dx, dy) = (dx * g * 9.81, dy * g * 9.81)
     me.set_acceleration((dx, dy))
-    #if target:
-    #    me.set_course_handler(adjust_flip_and_burn_course, target.key)
-    #else:
-    #    me.set_course_handler(adjust_flip_and_burn_course, (x2, y2))
     show(None)
     print(f"{me.get_visual()} burning {g}g for ({int(x2)}, {int(y2)})")
 
@@ -185,6 +185,7 @@ def set_interception_course(me, target):
             break
     if g > me.max_g:
         print(f"Unable to plot interception course with less than {me.max_g}g (or in less than 10h).")
+        me.set_course_handler(None, None)
         return None
     me.set_acceleration((ddx1, ddy1))
     me.set_course_handler(set_interception_course, target.key)
@@ -260,6 +261,15 @@ def show_projection(match):
         return
     print(f"In {time} seconds {me.visual} will be at {me.get_position(time)} at speed {me.get_speed(time)} m/s")
 
+def flip_and_burn(match):
+    me = get_craft(match.group(1))
+    target = get_craft(match.group(2))
+    if me is None or target is None:
+        return
+    dist = distance(me.get_position(), target.get_position())
+    time = sqrt(dist / 9.81) * 2
+    print(f"Distance from {me.visual} to {target.visual} is {format_distance(dist)}. Flip-and-burn at 1g takes {format_time(time, short=False)} seconds assuming start and velocity is 0 m/s.")
+
 def set_scale(match):
     global scale
     scale = int(match.group(1))
@@ -288,6 +298,11 @@ def set_center(match):
        center = craft.position
        autocenter = "x" if craft.key == "x" else None
        show(None)
+
+def set_center_coords(match):
+    global center
+    center = tuple(map(int, match.groups()))
+    show(None)
 
 def info(match):
     x = get_craft(match.group(1))
@@ -363,22 +378,48 @@ def set_velocity(match):
     craft.set_velocity((float(match.group(2)), float(match.group(3))))
     show(None)
 
+def format_time(time, short=True):
+    second = (1, "s", "second")
+    minute = (60, "m", "minute")
+    hour = (3600, "h", "hour")
+    day = (24 * 3000, "d", "day")
+    month = (30 * day[0], "m", "month")
+    year = (12 * month[0], "y", "year")
+    for (x, short_unit, long_unit) in (year, month, day, hour, minute, second):
+        if time >= x:
+            break
+    n = time / x
+    if n < 10:
+        number = f"{n:,.1f}"
+        if number[-1] == "0":
+            number = f"{n:,.0f}"
+    else:
+        number = f"{n:,.0f}"
+    if short:
+        out = number + " " + short_unit
+    else:
+        out = number + " " + long_unit + ("s" if number != "1" else "")
+    return out
+
 def format_distance(dist):
-    if dist > 1.496e+11:
-        dist = dist / 1.496e+11
+    if dist * 10  >= AU:
+        dist = dist / AU
         unit = " AU"
-        return f"{dist:.1f}{unit}"
-    unit = " m"
-    if dist > 1000:
-        dist = dist / 1000
-        unit = " km"
-    if dist > 1000:
-        dist = dist / 1000
-        unit = "K km"
-    if dist > 1000:
-        dist = dist / 1000
-        unit = "M km"
-    return f"{dist:.1f}{unit}"
+    else:
+        unit = " m"
+        if dist >= 1000:
+            dist = dist / 1000
+            unit = " km"
+        if dist >= 1000:
+            dist = dist / 1000
+            unit = "K km"
+        if dist >= 1000:
+            dist = dist / 1000
+            unit = "M km"
+    number = f"{dist:,.1f}"
+    if number[-1] == "0":
+        number = f"{dist:,.0f}"
+    return number + unit
 
 def distance_as_text(me, target):
     return format_distance(int(round(distance(me.get_position(0), target.get_position(0)))))
@@ -481,6 +522,17 @@ def resolved(match):
     show(None)
     print("Resolved")
 
+def toggle_ring(match):
+    global scale, center, inside_ring
+    if match.group(1) == "ding":
+        inside_ring = not inside_ring
+        if inside_ring:
+            scale = 33 * 1000 * 1000
+            center = (0, 0)
+        else:
+            set_scale_and_center(navigation_scale, "*")
+        show(None)
+
 def do_eval(match):
     if match.group(1) == "":
         print("Nothing to evaluate")
@@ -491,19 +543,31 @@ def do_eval(match):
     except:
         traceback.print_exc()
 
+def do_system_command(match):
+    if match.group(1) == "":
+        print("No command")
+        return
+    if "rm" in match.group(1):
+        print("I dont think so!")
+        return
+    try:
+        os.system(match.group(1))
+    except:
+        traceback.print_exc()
+
 def tick(seconds):
     global simulated_time, center, autocenter
     interception = False
+    crafts_to_check = [ craft for craft in crafts.values() if isinstance(craft, Craft) or isinstance(craft, Weapon) ]
+    pairs = [ (c1, c2) for c1 in crafts_to_check for c2 in crafts_to_check if c1 != c2 ]
+    pairs = [ (c1, c2) for (c1, c2) in pairs if (isinstance(c1, Craft) and isinstance(c2, Craft)) or (isinstance(c1, Weapon) and c1.target == c2) ]
     for _ in range(0, seconds):
         [craft.tick(1) for craft in crafts.values()]
         simulated_time += datetime.timedelta(seconds=1)
-        check = [(c1, c2) for c1 in crafts.values() for c2 in crafts.values() if
-                 c1 != c2 and distance(c1.get_position(), c2.get_position()) < 100]
-        for (craft1, craft2) in check:
-            if (isinstance(craft1, Craft) and isinstance(craft2, Craft)) or (
-                    isinstance(craft1, Weapon) and craft1.target == craft2):
+        for (c1, c2) in pairs:
+            if distance(c1.get_position(), c2.get_position()) < 100:
                 interception = True
-                interceptions_to_be_resolved.add(tuple(sorted((craft1.key, craft2.key))))
+                interceptions_to_be_resolved.add(tuple(sorted((c1.key, c2.key))))
         if interception:
             break
     [craft.adjust_course() for craft in crafts.values()]
@@ -517,43 +581,37 @@ def tick(seconds):
     return interception
 
 def tick_handler(match):
-    global prompt, tick_on_return
-    if match.group(1) != "":
-        tick_on_return = int(match.group(1))
-    if tick_on_return > 1:
-        prompt = f". Hit <return> for another 'tick {tick_on_return}'> "
-    else:
-        prompt = "> "
-    # tick(tick_on_return if match.group(1) == "" else int(match.group(1)))
-    tick(tick_on_return)
+    tick(1 if match.group(1) == "" else int(match.group(1)))
 
-def fast_forward(step):
+def fast_forward(match):
     global is_running, simulated_time, crafts
+    try:
+        total = eval(match.group(1).replace("d", "* 24 * 3600").replace("h", "* 3600").replace("m", "* 60"))
+        step = eval(match.group(2).replace("d", "* 24 * 3600").replace("h", "* 3600").replace("m", "* 60"))
+    except:
+        print("usage: ff <time> <time>, where <time> = <num>[dhm]")
+        return
     is_running = True
-    while is_running:
+    while is_running and total > 0:
         simulated_time += datetime.timedelta(seconds=step)
+        total -= step
         set_day(crafts, simulated_time.timestamp() // 86400)
         [craft.tick(step) for craft in crafts.values()]
-        print_prompt()
-        sys.stdout.flush()
-        time.sleep(0.1)
         show(None)
+        time.sleep(0.1)
     save(None)
 
 def run(match):
     global is_running
     step = int(match.group(1)) if match.group(1) != "" else 1
     if step > 100:
-        fast_forward(step)
+        print("Too big a step, try fast forward (ff total step) instead.")
         return
     is_running = True
     while is_running:
         if tick(step):
             is_running = False
             break
-        print_prompt()
-        sys.stdout.flush()
-        time.sleep(0.5)
         show(None)
     save(None)
 
@@ -588,7 +646,7 @@ def load_pickle(filename):
     except:
         print(f"Error loading {filename}")
 
-def load_text(match):
+def load_text(match, exit_on_duplicates=False):
     global crafts
     expr = r"[0-9Kkm\s.AU\+\-\*\/]+"
     ident = r"[A-Za-z0-9_\*\+\.]+"
@@ -596,6 +654,7 @@ def load_text(match):
     filename = "crafts/" + (match if type(match) == str else match.group(1))
     craftz = []
     stars = []
+    duplicates = False
     try:
         with open(filename, "r") as file:
             for line in file:
@@ -617,8 +676,16 @@ def load_text(match):
         print(f"{filename} not found")
         return
     for (key, name, x, y, dx, dy, colour, size, image) in stars:
+        if key in crafts:
+            print(f"{crafts[key].visual} already exists")
+            duplicates = True
+            continue
         crafts[key] = Star(name, (eval(x), eval(y)), (eval(dx), eval(dy)), eval(colour), key, key, image, None)
     for (key, name, x, y, dx, dy, colour, max_g) in craftz:
+        if key in crafts:
+            print(f"{crafts[key].visual} already exists")
+            duplicates = True
+            continue
         craft = make_craft(crafts, name, key, colour)
         x = x.replace("K", "*1000").replace("km", "* 1000")
         y = y.replace("K", "*1000").replace("km", "* 1000")
@@ -627,6 +694,12 @@ def load_text(match):
         craft.colour = eval(colour)
         craft.max_g = float(max_g)
         crafts[craft.key] = craft
+    if duplicates: # for startup testing
+        if exit_on_duplicates:
+            sys.exit(1)
+        else:
+            time.sleep(1)
+    show(None)
 
 def clear(match):
     global crafts
@@ -660,18 +733,27 @@ error_msgs = (
     "Silly.",
     "Shall we play a game?",
     "You will disarm all your weapons and escort us to Sector 001, where we will begin assimilating your culture and technology.",
-    "Does not compute. Destory Robinson family."
+    "Does not compute. Destory Robinson family.",
+    "Look into my eye."
 )
 
-# huba = [ "view", "info", "trajectory", "remove", "intercept <target>", "burn <direction>", "burn <n>g", "brake <n>g",
-#         "position <pair>", "velocity <pair>", "distance <target>", "torpedo <target>", "missile <target>" ]
+who = """
+sloane      tty7         2030-08-14 09:01 (:0)
+tjubangwoof pts/0        2030-08-14 09:17 (:0)
+david       pts/1        2030-08-14 08:59 (:0)
+arthur?     pts/2        2030-08-14 09:17 (:0)
+avatar      cargo/1      2025-01-05 23:59 (:0)
+"""[1:-1]
 
-hide = [ ".*" ]
+hide = [ ".*", "\?(.*)", ":(.*)", "ring" ]
+
+print_help =  lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))
 
 commands = (
     (r"show", show),
     (r"scale ([0-9]+)", set_scale),
     (r"center ([a-zA-Z0-9\*])+", set_center),
+    (r"center \(*([0-9\.\-]+)[, ]*([0-9\.\-]+)\)*", set_center_coords),
     (r"add ([a-zA-Z0-9]) ([a-zA-Z0-9]+)", add_craft),
     (r"tac[tical]*", lambda _: set_scale_and_center(tactical_scale, "x")),
     (r"nav[igation]*", lambda _: set_scale_and_center(navigation_scale, "*")),
@@ -682,23 +764,26 @@ commands = (
     (r"clear", clear),
     (r"tick[ ]*(\-?[0-9]*)", tick_handler),
     (r"run[ ]*([0-9]*)", run),
+    (r"ff\s+([0-9hdm]+)\s+([0-9hdm]+)", fast_forward),
     (r"([\+]+)", zoom),
     (r"([\-]+)", zoom),
-    (r"error", lambda _: 1 // 0),
-    (f"ls", lambda m: os.system("ls -F ships craftsG528672")),
-    (f"ships", lambda m: os.system("ls -F ships")),
-    (f"who", lambda m: os.system("who")),
-    (r"reset", reset_view),
-    (r"su", lambda _: lock(5)),
-    (r"help", lambda _: print("\n".join([command for (command, _) in commands if command not in hide]))),
-    (r"moria", lambda _: print("Sorry, games are not allowed right now.")),
-    (r"scan", lambda _: print("You see nothing special.")),
+    (r"error$", lambda _: 1 // 0),
+    (f"ships$", lambda m: os.system("ls -F ships")),
+    (f"who$", lambda _: print(who)),
+    (r"reset_view$", reset_view),
+    (r"su$", lambda _: lock(5)),
+    (r"help$", print_help),
+    (r"^\?$", print_help),
+    (r"mori$a", lambda _: print("Sorry, games are not allowed right now.")),
+    (r"scan$", lambda _: print("You see nothing special.")),
     (r"info ([a-zA-Z0-9]+)", info),
     (r"remove ([a-zA-Z0-9]+)", remove_craft),
     (r"view ([A-Za-z0-9\*\+]+)", view_craft_from_file),
-    (r"lock", lambda _: do_password()),
-    (r"exit", lambda _: save_and_exit()),
-    (r"quit", lambda _: save_and_exit()),
+    (r"ring\s+(.*)", toggle_ring),
+    (r"lock$", lambda _: do_password()),
+    (r"exit$", lambda _: save_and_exit()),
+    (r"quit$", lambda _: save_and_exit()),
+    (r"([a-zA-Z0-9]*):?[ ]*flip[andburn\-]*\s+([A-Za-z0-9\*\+]+)", flip_and_burn),
     (r"([a-zA-Z0-9]*):?[ ]*pro[ject]*\s+([0-9]+)", show_projection),
     (r"([a-zA-Z0-9]*):?[ ]*time ([a-zA-Z0-9]+)", show_interception_time),
     (r"([a-zA-Z0-9]*):?[ ]*traj[ectory]*", toggle_trajectory),
@@ -717,13 +802,18 @@ commands = (
     (r"([a-zA-Z0-9]*):?[ ]*torp[edo]* ([A-Za-z0-9]+)", fire_torpedo),
     (r"([a-zA-Z0-9]*):?[ ]*mis[sile]* ([A-Za-z0-9]+)", fire_missile),
     (r"\?(.*)", do_eval),
-    (r":(.*)", lambda match: os.system(match.group(1))),
+    (r":(.*)", do_system_command),
     (r".*", lambda _: print(error_msgs[random.randint(1, len(error_msgs) - 1) if random.randint(0, 10) == 0 else 0])),
 )
 
+
+def get_time_text():
+    return simulated_time.strftime("%Y-%m-%d %H:%M:%S")
+
 def print_prompt():
     global prompt
-    print(simulated_time.strftime("%Y-%m-%d %H:%M:%S") + prompt, end="")
+    print(prompt, end="")
+    # print(simulated_time.strftime("%Y-%m-%d %H:%M:%S") + prompt, end="")
 
 def sigint_handler(signum, frame):
     global is_running
@@ -789,77 +879,72 @@ def generic_error(e):
     else:
         return
 
-load_text("planets") # hack to avoid overlapping keys (planets/stars) does not check
-load_text("mcrn")
-signal.signal(signal.SIGINT, sigint_handler)
+def command_loop():
+    while True:
+        for line in sys.stdin:
+            if line == "\n":
+                tick(1)
+                show(None)
+            else:
+                for (regexp, action) in commands:
+                    match = re.match(regexp, line)
+                    if match:
+                        action(match)
+                        break
+            if time.time() >= next_save:
+                save(None)
+            print_prompt()
+            sys.stdout.flush()
+        print('\nUse "exit" to leave the world.')
+
 reset_view(None)
+signal.signal(signal.SIGINT, sigint_handler)
+load_text("planets", True) # hacK: load first to avoid overlapping keys (planets/stars) does not check
+# load_text("mcrn", True)
+reset_view(None) # hack to update planet updates
+scale = 0.7 * AU
 show(None)
 print_prompt()
 sys.stdout.flush()
 
 while True:
-    for line in sys.stdin:
-        if line == "\n":
-            tick(tick_on_return)
-            show(None)
-            if time.time() >= next_save:
-                save(None)
-        else:
-            for (regexp, action) in commands:
-                match = re.match(regexp, line)
-                if match:
-                    try:
-                        if "tick" not in line: # ugly
-                            tick_on_return = 1
-                            prompt = "> "
-                        action(match)
-                    except Exception as e:
-                        generic_error(e)
-                    break
-        print_prompt()
-        sys.stdout.flush()
-    print("\nUse 'exit' to quit.")
+    try:
+        command_loop()
+    except Exception as e:
+        generic_error(e)
 
 # make stuff for game session
-# calc flip-and-burn time
-#
-# x: pos center degrees distance
-# x: vel degrees speed
-#
-# course still not nice (must flip-and-burn) and correct for moving target [max speed in ring (otherwise speed of light)], time XXX should show speed a time XXX
-#
-# hidden crafts
-# max g as param to intercept command / max speed to intercept command / end-speed at intercept
+# adjust traj for scale
 # inside the ring space / slow zone
-# test
-# make it easier to program
+#
+# does "pos z 1 AU" actually work?
 # -----------------------------------------------------------------------
-# Gate size (and other objects)
-# clean up keys for load_text (planets and stars overrides)
-# only show "crafts" in view / tac list
-# font with aspect ratio 1
-# save word to text file
-# add images for planets & sun
-# hide crafts from navigation view? toggle planets / toggle etc
-# torpedo/missile factories
-# unit conversion for all output (acc, center, ...)
-# General conversion of units: m, km, 42K km, 42M km, AU (1.496e+11 = 149.600.000 km ~ 150 km) [return as (N, "K")]
-# init script
-# load/save: narrow exception
-# store time in file
-# brake/burn Xg with -/+ degrees
 # ======= RING ==========
 # Ring station
 # 1373 gates
 # roughly 1M km i diameter
-# fun sequences by specification (error, boot, ...)
 # https://expanse.fandom.com/wiki/Ring_Entities
 # change reality when passing through gate!
 # sensor flickers when in ring space
 # max speed
 # unit interpretation of input
-# show: remove extra line after listing of crafts
 # fun use of ANSI codes
+# max g as param to intercept command / max speed to intercept command / end-speed at intercept
+# lay course (must flip-and-burn) and correct for moving target [max speed in ring (otherwise speed of light)], time XXX should show speed a time XXX
+# Gate size (and other objects)
+# only show "crafts" in view / tac list
+# save word to text file
+# add images for planets & sun
+# hide crafts from navigation view? toggle planets / toggle etc
+# unit conversion for all output (acc, center, ...)
+# init script
+# load/save: narrow exception
+# store time in file
+# brake/burn Xg with -/+ degrees
+# font with aspect ratio 1
+# torpedo/missile factories
+# fun sequences by specification (error, boot, ...)
+# hidden crafts / planets / other
 # -----------------------------------------------------------------------
 # macro/tactical mode (combat lightning)
 # max speeds (torpedoes and missiles go crazy)

@@ -160,15 +160,15 @@ def make_craft(crafts, name, key=None, colour=None):
     return craft
 
 planets = [
-    ("Mercury",  0.4, "me", LIGHT_RED, 88), # Solid red, 2.4M km (radius)
+    ("Mercury",  0.4, "m", LIGHT_RED, 88), # Solid red, 2.4M km (radius)
     ("Venus",    0.7, "v", YELLOW, 225), # Cream, 6M km
     ("Earth",    1.0, "e", LIGHT_BLUE, 365), # Clear blue, 6.4M km
-    ("Mars",     1.5, "ma", RED, 687), # Clear red, 3.4M km
+    ("Mars",     1.5, "M", RED, 687), # Clear red, 3.4M km
     # Belt       2.8 Black      (Ceres), 490 km
     ("Ceres",    2.8, "c", DARK_GRAY, 1682),
     ("Jupiter",  5.2, "J", YELLOW, 4333), # Orange, 70M km
     ("Saturn",   9.6, "S", YELLOW, 10759), # Clear gold, 58M km
-    ("Uranus",  19.2, "U", BLUE, 30687), # Dark blue, 15.8M km
+    ("Uranus",  19.2, "U", LIGHT_CYAN, 30687), # Dark blue, 15.8M km
     ("Neptune", 30.0, "N", LIGHT_BLUE, 60190), # Light blue, 15.3M km
     ("Pluto",   39.5, "p", DARK_GRAY, 90560), #  29.7-39.5-49.3 (closest-average-most_distant) Brown. 2.4K km
     # Gate 21.2
