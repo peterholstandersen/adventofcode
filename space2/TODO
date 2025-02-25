@@ -1,0 +1,69 @@
+
+
+Server will do show. Clients will fire commands.
+
+when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
+- planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
+
+any object can orbit any other object (although it does not sense for a planet to orbit a torpedo)
+orbits (circles for now)
+
+A position can be a fixed point, a space object or a point relative to another position
+
+Relative postion is degrees/distance
+
+store "course" as INTERCEPT, ORBIT, TARGET(?) ... try to intercept slower speed
+
+ansi stuff
+what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
+
+torps are 00, 01, ..., 09, 10, 11, 12, 13. Last digit is the visual char
+missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are removed when their target disappears
+you can remove multiple missile by "00*". In general, the remove command takes multiple arguments (rm is also remove)
+lay out torpedoes and send them off later, torps & missiles can also be sent after other targets (and possibly not detonate)
+
+astroid belt / saturn rings / objects with bulk
+
+objects define a function saying whether a point is within the object (or a bounding box is overlapping),
+then it returns a visual for the point. Also, it has a viewing priority (may depend on view). Could also be hidden,
+depending on circumstances...
+
+use # or . for ring zone ... how to handle 1377 gates ... when do not draw them all, just representatives
+
+Diffuse objects like the belts or Saturn's rings may return random to create a pattern.
+
+
+Intercept course not cancelled if object suddenly is out of reach.
+cmd full_stop: an object to a full stop (vel=0, acc=0, course cancelled)
+cmd Reset ID: reread from file
+
+disable superuser commands when in user mode
+
+slow zone
+max speed
+
+output back to client
+
+combat stuff made easy
+
+how are courses implemented (and how shall they be used)
+- interception course: craft/weapons towards (moving) targets, max_g
+
+flag: save world on exit (or error), save frequence
+flag: restore world from newest file on startup
+
+code to read/write distances/time/acceleration
+
+
+world
+- tick
+- start/stop
+
+
+SpaceObject:
+view options
+
+
+
+--------------------------------------------------------------------------------------------------
+flip-and-burn towards target (moving or stationary)
