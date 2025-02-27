@@ -1,0 +1,38 @@
+scale: sets the viewing scale
+
+# in general, spaces and syntactic sugar are optional
+
+# a measure of distance is given as floating point number in either ly, AU or km. if no unit is given then it is taken as km.
+# K and M can be used to specify thousands and millions. (1 ly = 63241 AU = approximately 9 trillion km = 9.461e+12 to be precise)
+#
+# 10
+# 10 km
+# 10K km
+# 5.2 AU
+# 10M ly
+
+# a position designation either an object in pairs, a pair of coordinates or a position relative to object or coordinates:
+#
+# x
+# (10,10)
+# (10M, 10M)
+# (1 AU, 10 AU)
+# 100M 90 x
+# 100K 90 (100M, 100M)
+
+# ident:  one or more of: a-z A-Z 0-9 _ ! " # ¤ % & / ( ) = - ' ^ ~ ` | ? > < - , . ; :
+# unit:   AU | M km | K km | M | K | <nothing>
+# object: <ident>
+# dist:   <number> <unit>
+# coords: (<dist>, <dist>)
+# abs_position: <coords> | <object>
+# rel_position: <dist> 0-360 <abs_position>
+# position: <abs_position> | <rel_position>
+#
+# examples
+# x
+# (1000 km, 1000 km)
+# (1000, 1000)                  # (1000 km, 1000 km)
+# 100K km 1M                    # (100K km, 1M km)
+# (1 AU, 100M) 90 x             # (1 AU, 100M km) 90 degrees from x: to the right of x
+# (1M km, 2M km) 180 (100, 100) # (1M km, 2M km) 180 degrees from (0, 0): below (100 km, 100 km)

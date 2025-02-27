@@ -11,10 +11,7 @@ import time
 import uuid
 import pickle
 import traceback
-
-from world import *
-from utils import *
-from view import *
+import threading
 
 # ANSI: https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 
@@ -51,6 +48,7 @@ BG_CYAN = "\033[1;106m"
 
 DEFAULT_COLOUR = END # LIGHT_WHITE
 ROOT = "/home/peter/PycharmProjects/adventofcode/spacemaster"  # for now
-AU = 149.6e+06  # 149.600.000 km
+AU = 149.6e+06         # 149.600.000 km
+LIGHT_YEAR = 9.461e+12 # 9.461 trillion km
 
 # define paths

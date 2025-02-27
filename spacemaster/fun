@@ -1,0 +1,69 @@
+----------------- CRAFT -------------------
+generate_unique_key
+make_craft
+------------ COMPUTATIONAL ----------------
+solve(a, b, c)
+distance(a, b)
+get_interception_time(me, target)
+flip_and_burn(match)
+----------------- VIEW --------------------
+reset_view(match)
+set_scale_and_center(s, c)
+plot_trajectories(what)
+make_view_text(crafts)
+show(match)
+show_interception_time(match)
+show_projection(match)
+set_scale(match)
+zoom(match)
+set_center(match)
+set_center_coords(match)
+info(match)
+toggle_trajectory(match)
+format_time(time, short=True)
+format_distance(dist)
+distance_as_text(me, target)
+show_distance(match)
+view_craft_from_file(match)
+get_time_text()
+--------------- NAVIGATION ----------------
+set_course_helper(me, x2, y2, target=None)
+set_course(match)
+set_course_target(match)
+set_interception_course(me, target)
+set_burn(match)
+burn_brake_Xg(match)
+--------------- SUPER USER ---------------
+set_position(match)
+set_relative_position(match)
+set_velocity(match)
+add_craft(match)
+remove_craft(match)
+toggle_ring(match)
+save(match, quiet=False)
+load_pickle(filename)
+load_text(match, exit_on_duplicates=False)
+clear(match)
+--------------- COMBAT -------------------
+fire_torpedo(match)
+fire_missile(match)
+resolved(match)
+------------------ TIME ------------------
+tick(seconds)
+tick_handler(match)
+fast_forward(match)
+run(match)
+set_day
+----------------- FUN -------------------
+do_password()
+dotdotdot(text, pause)
+lock(pause=0)
+--------------- SYSTEN -----------------
+save_and_exit()
+sigint_handler(signum, frame)
+generic_error(e)
+do_eval(match)
+do_system_command(match)
+--------------- COMMAND -----------------
+print_prompt()
+command_loop()

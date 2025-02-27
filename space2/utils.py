@@ -6,8 +6,8 @@ def cl_to_xy(cl, offset_cl, center_xy, scale):
     return (x, y)
 
 def xy_to_cl(xy, offset_cl, center_xy, scale):
-    c = (xy[0] - center_xy[0]) // scale + offset_cl[0]
-    l = (- xy[1] + center_xy[1]) // scale + offset_cl[1]
+    c = round((xy[0] - center_xy[0]) // scale + offset_cl[0])
+    l = round((- xy[1] + center_xy[1]) // scale + offset_cl[1])
     return (c, l)
 
 def distance(a, b):
@@ -17,17 +17,24 @@ def distance(a, b):
     yy = y1 - y2
     return sqrt(xx * xx + yy * yy)
 
-def verify(result, expected):
+def safe_float(x):
+    return x if x is None else float(x)
+
+def verify(result, expected, silent=False):
     stack = traceback.extract_stack()
     fs = stack[-2]
-    print(f"{fs.filename.split("/")[-1]}:{fs.lineno}: {fs.line.replace('test(', '')}", end="")
-    if result == expected:
-        print("  OK")
+    if not silent:
+        print(f"{fs.filename.split("/")[-1]}:{fs.lineno}: {fs.line.replace('test(', '')}", end="")
+    ok = expected(result) if callable(expected) else (expected == result)
+    if ok:
+        if not silent:
+            print("  OK")
     else:
         print(f"  ERROR. result={result} expected={expected}")
         sys.exit(1)
+    return ok
 
-def main():
+def run_all_tests():
     cl = (0, 0)
     offset_cl = (0, 0)
     center_xy = (0, 0)
@@ -38,7 +45,6 @@ def main():
     verify(cl_to_xy((0, 0), offset_cl, center_xy, scale=1), (0, 0))
     verify(cl_to_xy((0, 0), offset_cl, center_xy, scale=1000), (0, 0))
     verify(cl_to_xy((1, -1), offset_cl, center_xy, scale=1000), (1000, 1000))
-    print("Test done")
 
 if __name__ == "__main__":
-    main()
+    run_all_tests()
