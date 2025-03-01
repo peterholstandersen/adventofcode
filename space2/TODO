@@ -1,49 +1,40 @@
 
 
+fix View center/track dependency
 
+what happens if you do do run run when it is running
 
-main thread: just loops show ...
+dont enhance belt (hacked for now). What is the logic here?
 
-running_flag = threading.Event()
-
-show thread:
-while True
-    if running_flag.is_set():
-       time += step
-       show()
-       sleep(...)
-    else:
-       running_flag.wait(1000)
-
-command thread:
-running_flag.set()
-running_flag.clear()
-
-
-time thread: updates time (if is_running) at given speed
-
-command thread:
-- run: starts time
-
-# usage, help <cmd>
-
-Server will do show. Clients will fire commands.
+update order
+print order
 
 when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
 - planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
+
+do space craft course ... and refactor orbit?
+
+Jupiter moons
+objects with texture (Jupiter)
+
+lock everything on command, lock everything on update ???
+
+slow zone
+
+# usage, help <cmd>
 
 store "course" as INTERCEPT, ORBIT, TARGET(?) ... try to intercept slower speed
 
 ansi stuff
 what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
+command identification of targets are the first letters of the name (ignore caps) until unambigious -- otherwise error
 
 torps are 00, 01, ..., 09, 10, 11, 12, 13. Last digit is the visual char
 missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are removed when their target disappears
 you can remove multiple missile by "00*". In general, the remove command takes multiple arguments (rm is also remove)
 lay out torpedoes and send them off later, torps & missiles can also be sent after other targets (and possibly not detonate)
 
-astroid belt / saturn rings / objects with bulk / objects with texture (Jupitor)
-Diffuse objects like the belts or Saturn's rings may return random to create a pattern.
+Ilus system
 
 use # or . for ring zone ... how to handle 1377 gates ... when do not draw them all, just representatives
 
@@ -75,5 +66,6 @@ world
 SpaceObject:
 viewing options
 
+pseudo 3d
 --------------------------------------------------------------------------------------------------
 flip-and-burn towards target (moving or stationary)

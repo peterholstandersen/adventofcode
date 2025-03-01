@@ -1,56 +1,91 @@
 from common import *
 from utils import *
-import universe
+import universe as u
+
+def format_time(time, short=True):
+    second = (1, "s", "second")
+    minute = (60, "m", "minute")
+    hour   = (60 * minute[0], "h", "hour")
+    day    = (24 * hour[0], "d", "day")
+    month  = (30 * day[0], "M", "month")
+    year   = (12 * month[0], "Y", "year")
+    for (x, short_unit, long_unit) in (year, month, day, hour, minute, second):
+        if time >= x:
+            break
+    n = time / x
+    number = (f"{n:,.1f}" if n < 10 else f"{n:,.0f}")
+    if number[-2:] == ".0":
+        number = f"{n:,.0f}"
+    if number != "1":
+        long_unit += "s"
+    unit = short_unit if short else long_unit
+    return number + " " + unit
+
+def format_distance(dist):
+    if dist * 10 >= AU:
+        dist = dist / AU
+        unit = " AU"
+    else:
+        unit = " km"
+        if dist >= 1000:
+            dist = dist / 1000
+            unit = "K km"
+        if dist >= 1000:
+            dist = dist / 1000
+            unit = "M km"
+    number = f"{dist:,.1f}"
+    if number[-2:] == ".0":
+        number = f"{dist:,.0f}"
+    return number + unit
 
 class View:
-    rlock = threading.RLock()
-    _center = None
-    _scale = None
-    zoom = None
-    def __init__(self, center, scale, zoom):
-        self._center = center
-        self._scale = scale
-        self.zoom = zoom
+    # rlock = threading.RLock()
+    center = None
+    track = None
+    scale = None
+    enhance = None
 
-    @property
-    def scale(self):
-        with self.rlock:
-            return self._scale
+    def __init__(self, center, scale, enhance):
+        self.center = center
+        self.track = None
+        self.scale = scale
+        self.enhance = enhance
 
-    @property
-    def center(self):
-        with self.rlock:
-            return self._center
-
-    @scale.setter
-    def scale(self, value):
-        # print(f"scale: set {value}")
-        with self.rlock:
-            self._scale = value
-
-    @center.setter
-    def center(self, value):
-        # print(f"center: set {value}")
-        with self.rlock:
-            self._center = value
-
-    def get_visual(self, universe, size_cl):
+    def _get_visual(self, universe, size_cl):
+        if self.track:
+            if not self.track in universe.bodies:
+                print(f"{self.track} is lost in space, stopped tracking")
+                self.track = None
+            self.center = universe.bodies[ident].position
         offset_cl = (size_cl[0] // 2, size_cl[1] // 2)
         # (min_x, max_y) is correct since line 0 represents the maximum y value
-        (min_x, max_y) = cl_to_xy((0, 0), offset_cl, self._center, self.scale)
-        (max_x, min_y) = cl_to_xy(size_cl, offset_cl, self._center, self.scale)
-        bbox_xy = ((min_x, min_y), (max_x, max_y))
+        (min_x, max_y) = cl_to_xy((0, 0), offset_cl, self.center, self.scale)
+        (max_x, min_y) = cl_to_xy(size_cl, offset_cl, self.center, self.scale)
         visual = dict()
-        for body in universe._bodies.values():
-            visual.update(body.get_visual(bbox_xy, size_cl, offset_cl, self._center, self.scale, self.zoom))
+        for body in universe.bodies.values():
+            visual.update(body.get_visual(size_cl, offset_cl, self.center, self.scale, self.enhance))
         return visual
 
-    def show(self, universe):
-        (c, l) = os.get_terminal_size()
-        l -= 4
-        visual = self.get_visual(universe, (c, l))
+    def _get_text(self, universe):
+        out = ""
+        time_text = universe.clock.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        out += f"{time_text}   Center {self.center}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
+        return out
+
+    def show(self, universe, size_cl=None):
+        universe.update()
+        if size_cl:
+            (c, l) = size_cl
+        else:
+            (c, l) = os.get_terminal_size()
+        text = self._get_text(universe)
+        l = l - 6 - text.count("\n")
+        visual = self._get_visual(universe, (c, l))
         out = visual_to_string(visual, (c, l))
+        out += text
+        os.system("clear")
         print(out)
+        sys.stdout.flush()
 
 def visual_to_string(visual, size_cl):
     out = ""
@@ -60,7 +95,7 @@ def visual_to_string(visual, size_cl):
         out += "\n"
     return out
 
-# ===========================================================================
+# =================================================================================================================
 
 # Planet m  Mercury 0.4  LIGHT_RED     88
 # Planet v  Venus   0.7  YELLOW       225
@@ -73,18 +108,28 @@ def visual_to_string(visual, size_cl):
 # Planet N  Neptune 30.0 LIGHT_BLUE 60190
 # Planet p  Pluto   39.5 DARK_GRAY  90560
 
+def test_format_time():
+    year = 30 * 24 * 3600 * 12
+    test_time = [(1, "1 s", "1 second"), (60, "1 m", "1 minute"), (3600, "1 h", "1 hour"), (24 * 3600, "1 d", "1 day"),
+                 (30 * 24 * 3600, "1 M", "1 month"), (year, "1 Y", "1 year"), (year * 1.5, "1.5 Y", "1.5 years"),
+                 (year * 10, "10 Y", "10 years")]
+    for (t, short, long) in test_time:
+        print(f"{t:>10}   {short:<6}", end="")
+        ok = verify(format_time(t), short, silent=True)
+        print(" OK" if ok else " ERROR")
+    for (t, short, long) in test_time:
+        print(f"{t:>10}   {long:<10}", end="")
+        ok = verify(format_time(t, short=False), long, silent=True)
+        print(" OK" if ok else " ERROR")
+
+def create_test_view():
+    return View((0, 0), 0.1 * AU, 1)
+
 def run_all_tests():
-    uni = universe.create_test_universe()
-    view = View((0, 0), AU // 150, 4)
-    try:
-        size_cl = os.get_terminal_size()
-        size_cl = (size_cl[0], size_cl[1] - 2)
-    except OSError:
-        size_cl = (80, 4)
-    print("size_cl:", size_cl)
-    visual = view.get_visual(uni, size_cl)
-    out = visual_to_string(visual, size_cl)
-    print(out, end="")
+    test_format_time()
+    (universe, clock) = u.create_test_universe()
+    view = create_test_view()
+    view.show(universe, (80, 8))
 
 if __name__ == "__main__":
     run_all_tests()

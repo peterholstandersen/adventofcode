@@ -4,7 +4,7 @@ import universe as u
 import view as v
 
 ident = r"([a-zA-Z0-9_*+]+)"
-number = r"([+-]?[0-9\.]+)"
+number = r"([+-]?[0-9]+\.?[0-9]*)"
 
 def interpret_distance(number, prefix, unit):
     number = float(number)
@@ -20,6 +20,9 @@ def preprocess(line):
     line = re.sub(rf"{number}\s*{unit}", lambda match: str(interpret_distance(*match.groups())) + " ", line)
     return line.strip()
 
+def do_show(universe, view):
+    view.show(universe)
+
 def do_scale(universe, view, number):
     number = round(float(number))
     if number <= 0:
@@ -29,10 +32,20 @@ def do_scale(universe, view, number):
 
 def do_zoom(universe, view, command):
     scale = view.scale
-    for char in command:
-        scale = scale / 10 if char == "-" else scale * 10
-    view.scale = round(scale)
+    n = len(command)
+    factor = max(50 - n * 10, 10) / 100
+    factor = pow(factor, n)
+    scale = scale * factor if command[0] == "+" else scale / factor
+    view.scale = max(round(scale), 1)
     return f"Scale set to {view.scale} km"
+
+def do_enhance(universe, view, arg):
+    n = safe_float(arg)
+    if n:
+        view.enhance = n
+        return f"Enhancement set to {n}"
+    else:
+        return f"Syntax error. Try enhance <number>"
 
 def do_center(universe, view, ident, x, y, dx, dy, degrees, dist):
     # ident, x, and y specifies the absolute position
@@ -54,8 +67,27 @@ def do_center(universe, view, ident, x, y, dx, dy, degrees, dist):
     elif degrees and dist:
         x += sin(radians(degrees)) * dist
         y -= cos(radians(degrees)) * dist
+    view.track = None
     view.center = (round(x), round(y))
-    return f"Center set to ({view.center})"
+    return f"Center set to {view.center}"
+
+def do_track(universe, view, ident):
+    if not ident in universe.bodies:
+        return f"Cannot find {ident}"
+    view.track = ident
+    view.center = universe[ident].position
+    return f"Tracking {body.visual}"
+
+def do_run(universe, view, step):
+    step = float(step)
+    if universe.clock.start(datetime.timedelta(seconds=step), lambda : view.show(universe)):
+        return "clock started"
+    return f"fail to start clock. alive={universe.clock.thread.is_alive()}"
+
+def do_stop(universe, view):
+    if universe.clock.stop():
+        return "clock stopped"
+    return "failed to stop clock"
 
 def get_commands():
     coords = rf"\(?{number}\s*,\s*{number}\)?"
@@ -65,11 +97,15 @@ def get_commands():
     relative_position = rf"(?:{relative_position1}|{relative_position2})"
 
     commands = (
-        (r"show", lambda universe, view: view.show(universe)),
-        (r"\s*$", lambda u, v: None),
-        (rf"scale\s+{number}$", do_scale),
-        (r"([+]+|[-]+)", do_zoom),
-        (rf"center\s+{absolute_position}\s*{relative_position}?\s*$", do_center),
+        (r"^\s*$", do_show),
+        (r"sh[ow]*", do_show),
+        (rf"sc[ale]*\s+{number}$", do_scale),
+        (rf"([+]+|[-]+)", do_zoom),
+        (rf"en[hance]* {number}", do_enhance),
+        (rf"ce[nter]*\s+{absolute_position}\s*{relative_position}?\s*$", do_center),
+        (rf"tr[ack]*\s+{ident}\s*$", do_track),
+        (rf"ru[n]*\s+{number}$", do_run),
+        (rf"st[op]*\s*$", do_stop),
         ("exit", lambda u, v: sys.exit()),
      )
     return commands
@@ -103,19 +139,23 @@ def inner_command_loop(universe, view):
             if result:
                 view.show(universe)
                 print(result)
+                sys.stdout.flush()
             prompt()
-        print('\nUse "exit" to leave the world.')
+        print("\nUse 'exit' to leave the universe.")
 
 def command_loop(universe, view):
     while True:
         try:
             inner_command_loop(universe, view)
+        except KeyboardInterrupt:
+            print("\nUse 'exit' to leave the universe.")
         except Exception as e:
             traceback.print_exc()
 
 # ===============================================================================================================
 
 def run_all_tests(universe, view):
+    verify(preprocess("."), ".")
     verify(preprocess("10M"), "10000000")
     verify(preprocess("(10K km, 1)"), "10000 , 1")
     commands = get_commands()
@@ -137,9 +177,12 @@ def is_running_in_terminal():
         return True
 
 if __name__ == "__main__":
-    universe = u.create_test_universe()
+    (universe, clock) = u.create_test_universe(start_thread=True)
     view = v.View((0, 0), AU // 10, 1)
+    do_run(universe, view, 10)
+    do_stop(universe, view)
     if is_running_in_terminal():
         command_loop(universe, view)
     else:
         run_all_tests(universe, view)
+    clock.terminate()

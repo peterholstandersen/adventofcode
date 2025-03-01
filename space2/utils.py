@@ -18,7 +18,10 @@ def distance(a, b):
     return sqrt(xx * xx + yy * yy)
 
 def safe_float(x):
-    return x if x is None else float(x)
+    try:
+        return float(x)
+    except (ValueError, TypeError):
+        return None
 
 def verify(result, expected, silent=False):
     stack = traceback.extract_stack()

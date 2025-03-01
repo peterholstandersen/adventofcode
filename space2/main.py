@@ -4,9 +4,13 @@ import view as v
 import command
 
 def main():
-    universe = u.create_test_universe()
-    view = v.View((0, 0), AU // 10, 4)
-    command.command_loop(universe, view)
+    try:
+        (universe, clock) = u.create_test_universe(start_thread=True)
+        view = v.create_test_view()
+        view.show(universe)
+        command.command_loop(universe, view)
+    finally:
+        clock.terminate()
 
 if __name__ == "__main__":
     main()
