@@ -1,8 +1,7 @@
 
+"run" should accept other than "seconds" as argument
 
-fix View center/track dependency
-
-what happens if you do do run run when it is running
+identification of target by name .. key= first letters
 
 dont enhance belt (hacked for now). What is the logic here?
 
@@ -22,8 +21,6 @@ objects with texture (Jupiter)
 lock everything on command, lock everything on update ???
 
 slow zone
-
-# usage, help <cmd>
 
 store "course" as INTERCEPT, ORBIT, TARGET(?) ... try to intercept slower speed
 

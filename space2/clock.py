@@ -17,7 +17,9 @@ class Clock:
     def start_thread(self):
         print("clock: start_thread")
         self.thread.start()
-        print(f"clock: start_thread: thread.is_alive()={self.thread.is_alive()}")
+
+    def is_running(self):
+        return self.thread.is_alive() and self._running_event.is_set()
 
     def terminate(self):
         print("clock: terminate")
@@ -31,7 +33,6 @@ class Clock:
         print("clock: thread terminated")
 
     def start(self, step, hook):
-        print(f"clock: start, step={step} alive={self.thread.is_alive()}")
         if not self.thread.is_alive():
             print("clock: thread is not alive")
             return False
@@ -41,7 +42,6 @@ class Clock:
         return True
 
     def stop(self):
-        print(f"clock: stop alive={self.thread.is_alive()}")
         if not self.thread.is_alive():
             print("clock: thread is not alive")
             return False
@@ -57,7 +57,6 @@ class Clock:
                     self._hook()
                 time.sleep(1)
             else:
-                print("clock: wait for 600 sec")
                 self._running_event.wait(600)
 
 # ===============================================
@@ -70,10 +69,8 @@ def make_clock(timestamp, start_thread=False):
 
 if __name__ == "__main__":
     print("Hej Univers")
-
     timestamp = datetime.datetime(2030, 8, 20, 16, 49, 7, 652303)
     clock = make_clock(timestamp, True)
-
     print("type command>")
     for line in sys.stdin:
         line = line.strip()
@@ -90,5 +87,3 @@ if __name__ == "__main__":
         else:
             print("unknown command. try start, stop or exit.")
         print("type command>")
-
-    

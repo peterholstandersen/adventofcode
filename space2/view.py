@@ -39,24 +39,18 @@ def format_distance(dist):
     return number + unit
 
 class View:
-    # rlock = threading.RLock()
-    center = None
-    track = None
+    track = None       # If track is a string, the center is updated to the position of the object before showing
+    center = None      # Coordinates
     scale = None
     enhance = None
 
     def __init__(self, center, scale, enhance):
-        self.center = center
         self.track = None
+        self.center = center
         self.scale = scale
         self.enhance = enhance
 
     def _get_visual(self, universe, size_cl):
-        if self.track:
-            if not self.track in universe.bodies:
-                print(f"{self.track} is lost in space, stopped tracking")
-                self.track = None
-            self.center = universe.bodies[ident].position
         offset_cl = (size_cl[0] // 2, size_cl[1] // 2)
         # (min_x, max_y) is correct since line 0 represents the maximum y value
         (min_x, max_y) = cl_to_xy((0, 0), offset_cl, self.center, self.scale)
@@ -69,11 +63,22 @@ class View:
     def _get_text(self, universe):
         out = ""
         time_text = universe.clock.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        out += f"{time_text}   Center {self.center}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
+        center_text = f"Center {self.center}" if self.track is None else f"Tracking {self.track}"
+        out += f"{time_text}   {center_text}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
         return out
+
+    def update_center(self, universe):
+        if self.track:
+            body = universe.bodies.get(self.track)
+            if body:
+                self.center = body.position
+            else:
+                print(f"{self.track} is lost in space, stopped tracking")
+                self.track = None
 
     def show(self, universe, size_cl=None):
         universe.update()
+        self.update_center(universe)
         if size_cl:
             (c, l) = size_cl
         else:

@@ -67,14 +67,14 @@ def do_center(universe, view, ident, x, y, dx, dy, degrees, dist):
     elif degrees and dist:
         x += sin(radians(degrees)) * dist
         y -= cos(radians(degrees)) * dist
-    view.track = None
+    view._track = None
     view.center = (round(x), round(y))
     return f"Center set to {view.center}"
 
 def do_track(universe, view, ident):
     if not ident in universe.bodies:
         return f"Cannot find {ident}"
-    view.track = ident
+    view._track = ident
     view.center = universe[ident].position
     return f"Tracking {body.visual}"
 
