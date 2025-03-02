@@ -23,6 +23,16 @@ def safe_float(x):
     except (ValueError, TypeError):
         return None
 
+def is_running_in_terminal():
+    try:
+        os.get_terminal_size()
+    except OSError:
+        return False
+    else:
+        return True
+
+# =====================================================================================================
+
 def verify(result, expected, silent=False):
     stack = traceback.extract_stack()
     fs = stack[-2]

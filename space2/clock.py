@@ -17,6 +17,7 @@ class Clock:
     def start_thread(self):
         print("clock: start_thread")
         self.thread.start()
+        print(f"clock: start_thread: thread.is_alive()={self.thread.is_alive()}")
 
     def terminate(self):
         print("clock: terminate")
@@ -52,7 +53,6 @@ class Clock:
         while not self._terminate:
             if self._running_event.is_set():
                 self.timestamp += self._step
-                # print(self._timestamp)
                 if self._hook:
                     self._hook()
                 time.sleep(1)

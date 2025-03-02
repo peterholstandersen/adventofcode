@@ -18,7 +18,7 @@ class SpaceObject:
     days = None
 
     def __init__(self, key, name, position, colour, visual, radius, image, orbits, distance, days):
-        self.key = key # TODO: create key and visual
+        self.key = key
         self.name = name
         self.position = position
         self.colour = colour
@@ -106,7 +106,6 @@ class Universe:
         return None
 
     def update(self):
-        # TODO: make sure to update bodies in the right order (orbitees before orbiters)
         now = self.clock.timestamp
         if now <= self._last_update:
             return

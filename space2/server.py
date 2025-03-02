@@ -28,14 +28,6 @@ class ClientConnection(threading.Thread):
                 if len(data) == 0:
                     debug("server dropped connection")
                     break
-                debug("acquire lock")
-                with rlock:
-                    debug("lock acquired")
-                    x = x + 1
-                    debug("sleeping")
-                    sleep(5)
-                debug(f"x = {x}")
-                debug("lock released")
                 debug(f"received {len(data)} bytes: {str(data.decode('utf-8'))}")
             except Exception as e:
                 traceback.print_exc()
