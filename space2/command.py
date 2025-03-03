@@ -45,10 +45,35 @@ class Command(cmd.Cmd):
     intro = "Hello Universe. Type help or ? to list commands."
     prompt = '> '
 
-    # Helper function
+    # Helper functions
     def _set_scale(self, scale):
         self.view.scale = round(scale)
         self.msg = f"Scale set to {v.format_distance(self.view.scale)}"
+
+    def _complete_names(self, text, line, begidx, endidx):
+        last_words = line.partition(' ')[2]     # all words after the first space
+        offset = len(last_words) - len(text)
+        return [name[offset:] for name in self.universe.bodies if name.startswith(last_words)]
+
+    def _get_body(self, arg):
+        candidates = self.universe.find_bodies(arg)
+        if len(candidates) == 0:
+            self.msg = f"Cannot find {arg}."
+            return None
+        elif len(candidates) == 1:
+            return candidates[0]
+        else:
+            if len(candidates) == 2:
+                text = candidates[0].name + " or " + candidates[1].name
+            else:
+                names = [body.name + ", " for body in candidates]
+                text = ("".join(names[:-1])) + "or " + candidates[-1].name
+            self.msg = "Did you mean " + text + "?"
+            self.show = False
+            return None
+
+    complete_center = _complete_names
+    complete_track = _complete_names
 
     def do_scale(self, arg):
         """Scale the view. Usage: scale <positive number>."""
@@ -113,12 +138,10 @@ Examples:
         ident = match.group(1)
         (x, y, dx, dy, degrees, dist) = tuple(map(safe_float, match.groups()[1:]))
         if ident is not None:
-            xy = self.universe.get_body_position(ident)
-            if not xy:
-                self.msg = f"Cannot find {ident}. Try 'help center'."
+            body = self._get_body(ident)
+            if not body:
                 return
-            else:
-                (x, y) = xy
+            (x ,y) = body.position
         if dx and dy:
             (x, y) = (x + dx, y + dy)
         elif degrees and dist:
@@ -132,15 +155,14 @@ Examples:
         """Track a space object. For example, track J"""
         usage = "usage: track <space object>"
         if len(arg) == 0:
+            self.show = False
             self.msg = usage
             return
-        body = self.universe.bodies.get(arg)
+        body = self._get_body(arg)
         if body:
-            self.view.track = arg
+            self.view.track = body.name
             self.view.update_center(self.universe)
-            self.msg = f"Tracking {body.visual}"
-        else:
-            self.msg = f"Cannot find {arg}. " + usage
+            self.msg = f"Tracking {self.view.track}"
 
     def do_run(self, arg):
         """Usage: run <seconds>. Start the universe clock in increments of <seconds>"""
@@ -184,6 +206,7 @@ Examples:
         if line[0] == "+" or line[0] == "-":
             self.do_zoom(line)
         else:
+            self.show = False
             self.msg = f"Unrecognized command '{line}'. Try 'help'"
 
     def precmd(self, line):
@@ -220,7 +243,7 @@ def run_all_tests(command, universe, view):
         ("sc", ["1", "2"]),
         ("sca", ["1", "2"]),
         ("enhance", ["10", "-20", "30", "-1"]),
-        ("center", ["0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
+        ("center", ["v", "0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
         ("track",  ["m", "0", "", "(1,2)"])
     ]
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]

@@ -4,11 +4,11 @@ import clock as c
 
 class SpaceObject:
     universe = None
-    key = None
     max_g = None
     image = None
     colour = None
     visual = None
+    colour_visual = None
     radius = None
     position = None
     velocity = None
@@ -17,12 +17,12 @@ class SpaceObject:
     distance = None
     days = None
 
-    def __init__(self, key, name, position, colour, visual, radius, image, orbits, distance, days):
-        self.key = key
+    def __init__(self, name, position, colour, visual, radius, image, orbits, distance, days):
         self.name = name
         self.position = position
         self.colour = colour
-        self.visual = colour + visual + END
+        self.visual = visual
+        self.colour_visual = colour + visual + END
         self.radius = radius
         self.image = image
         self.orbits = orbits
@@ -33,7 +33,7 @@ class SpaceObject:
         visual = dict()
         cl = xy_to_cl(self.position, offset_cl, center_xy, scale)
         self_xy = cl_to_xy(cl, offset_cl, center_xy, scale) # own position aligned to viewing grid
-        visual[cl] = self.visual
+        visual[cl] = self.colour_visual
         radius = self.radius * enhance
         (c, l) = cl
         (radius_c, radius_l) = xy_to_cl((radius, - radius), (0, 0), (0, 0), scale)
@@ -44,14 +44,14 @@ class SpaceObject:
             for l1 in range(min_l, max_l + 1):
                 xy = cl_to_xy((c1, l1), offset_cl, center_xy, scale)
                 if distance(xy, self_xy) <= radius:
-                    visual[(c1, l1)] = self.visual
+                    visual[(c1, l1)] = self.colour_visual
         return visual
 
     def update(self, last_update, now):
         if self.orbits is not None:
             xy = self.universe.get_body_position(self.orbits)
             if xy is None:
-                print(f"{orbits} is lost in space.")
+                print(f"{self.orbits} is lost in space.")
                 orbits = None
                 return
             (x, y) = xy
@@ -87,7 +87,7 @@ class Ring(SpaceObject):
             for l1 in range(min_l, max_l + 1):
                 xy = cl_to_xy((c1, l1), offset_cl, center_xy, scale)
                 if inner_radius <= distance(xy, self_xy) <= outer_radius and randint(0, 100) / 100 < self._density:
-                    visual[(c1, l1)] = self.visual
+                    visual[(c1, l1)] = self.colour_visual
         return visual
 
 class Universe:
@@ -100,9 +100,14 @@ class Universe:
         self.clock = clock
         self._last_update = last_update
 
-    def get_body_position(self, key):
+    def find_bodies(self, key):
         if key in self.bodies:
-            return self.bodies[key].position
+            return [ self.bodies[key] ]
+        return [body for body in self.bodies.values() if key == body.visual]
+
+    def get_body_position(self, name):
+        if name in self.bodies:
+            return self.bodies[name].position
         return None
 
     def update(self):
@@ -136,24 +141,24 @@ def create_test_universe(start_thread=False):
     last_update = datetime.datetime(2030, 8, 20, 16, 49, 7, 652303)
     clock = c.make_clock(last_update + datetime.timedelta(1), start_thread=start_thread)
     bodies = dict()
-    bodies["*"] = SpaceObject("*", "Sun",     (0, 0),         RED,        "*", 696340, "star_sun.png", None, None, None)
-    bodies["m"] = SpaceObject("m", "Mercury", ( 0.4 * AU, 0), LIGHT_RED,  "m",   2440, "...", "*",  0.4 * AU,    88)
-    bodies["v"] = SpaceObject("v", "Venus",   ( 0.7 * AU, 0), YELLOW,     "v",   6000, "...", "*",  0.7 * AU,   225)
-    bodies["e"] = SpaceObject("e", "Earth",   ( 1.0 * AU, 0), BLUE,       "e",   6400, "...", "*",  1.0 * AU,   365)
-    bodies["M"] = SpaceObject("M", "Mars",    ( 1.5 * AU, 0), RED,        "M",   6400, "...", "*",  1.5 * AU,   687)
-    bodies["c"] = SpaceObject("c", "Ceres",   ( 2.8 * AU, 0), DARK_GRAY,  "c",    490, "...", "*",  2.8 * AU,  1682)
-    bodies["J"] = SpaceObject("J", "Jupiter", ( 5.2 * AU, 0), YELLOW,     "J",  70000, "...", "*",  5.2 * AU,  4333)
-    bodies["S"] = SpaceObject("S", "Saturn",  ( 9.6 * AU, 0), YELLOW,     "S",  58000, "...", "*",  9.6 * AU, 10759)
-    bodies["U"] = SpaceObject("U", "Uranus",  (19.2 * AU, 0), LIGHT_CYAN, "U",  15800, "...", "*", 19.2 * AU, 30687)
-    bodies["N"] = SpaceObject("N", "Neptun",  (30.0 * AU, 0), LIGHT_BLUE, "N",  15300, "...", "*", 30.0 * AU, 60190)
-    bodies["p"] = SpaceObject("p", "Pluto",   (39.5 * AU, 0), DARK_GRAY,  "p",   2400, "...", "*", 39.5 * AU, 90560)
+    bodies["Sun"] = SpaceObject("Sun",     (0, 0),         YELLOW,           "*", 696340, "star_sun.png", None, None, None)
+    bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0), DARK_GRAY, "m",   2440, "...", "Sun",  0.4 * AU,    88)
+    bodies["Venus"] = SpaceObject("Venus",   ( 0.7 * AU, 0), YELLOW,      "v",   6000, "...", "Sun",  0.7 * AU,   225)
+    bodies["Earth"] = SpaceObject("Earth",   ( 1.0 * AU, 0), BLUE,        "e",   6400, "...", "Sun",  1.0 * AU,   365)
+    bodies["Mars"] = SpaceObject("Mars",    ( 1.5 * AU, 0), RED,          "m",   6400, "...", "Sun",  1.5 * AU,   687)
+    bodies["Ceres"] = SpaceObject("Ceres",   ( 2.8 * AU, 0), DARK_GRAY,   "c",    490, "...", "Sun",  2.8 * AU,  1682)
+    bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0), BROWN,    "J",  70000, "...", "Sun",  5.2 * AU,  4333)
+    bodies["Saturn"] = SpaceObject("Saturn",  ( 9.6 * AU, 0), YELLOW,     "S",  58000, "...", "Sun",  9.6 * AU, 10759)
+    bodies["Uranus"] = SpaceObject("Uranus",  (19.2 * AU, 0), LIGHT_CYAN, "U",  15800, "...", "Sun", 19.2 * AU, 30687)
+    bodies["Neptun"] = SpaceObject("Neptun",  (30.0 * AU, 0), LIGHT_BLUE, "N",  15300, "...", "Sun", 30.0 * AU, 60190)
+    bodies["Pluto"] = SpaceObject("Pluto",   (39.5 * AU, 0), DARK_GRAY,   "p",   2400, "...", "Sun", 39.5 * AU, 90560)
 
     # dont enhance!
-    bodies["belt"]   = Ring(2.5 * AU, 3.3 * AU, 0.25, "belt", "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
+    bodies["Asteroid Belt"]   = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
 
-    bodies["c-ring"] = Ring(75000, 85000, 1, "c-ring", "C ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "*", 9.6 * AU, 10759)
-    bodies["b-ring"] = Ring(92000, 115000, 1, "b-ring", "B ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "*", 9.6 * AU, 10759)
-    bodies["a-ring"] = Ring(120000, 136000, 1, "a-ring", "A ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "*", 9.6 * AU, 10759)
+    bodies["C ring"] = Ring(75000, 85000, 1,   "C ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "Sun", 9.6 * AU, 10759)
+    bodies["B ring"] = Ring(92000, 115000, 1,  "B ring",   (0, 0),    FAINT + BROWN,  ".", None, "...", "Sun", 9.6 * AU, 10759)
+    bodies["A ring"] = Ring(120000, 136000, 1, "A ring",   (0, 0),    YELLOW,  ".", None, "...", "Sun", 9.6 * AU, 10759)
 
     # bodies["o"] = SpaceObject("o", "Moon",    (AU, AU),       LIGHT_GRAY, "m",   1737, "...", "e", 384400, 27)
 

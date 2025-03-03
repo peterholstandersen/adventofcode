@@ -1,70 +1,60 @@
 
-"run" should accept other than "seconds" as argument
+Show crafts/objects in display
 
-identification of target by name .. key= first letters
+Add gate
+Add craft
+Default craft in Command
+Make "course" command
+Make tick command
+On update: perform course
 
-dont enhance belt (hacked for now). What is the logic here?
+Use partition in command.py instead of split
 
-handling of keys for space objects
+===================================================================================
 
-update order
+Course: Orbit, Target
+x: command, default object, tab-completion of names
+multiple systems / travel through gate
+poi
+hide/show
+monitor
+Make list command
+
+interception course: craft/weapons towards (moving) targets, max_g
+Intercept cancelled if object suddenly is out of reach.
+try to intercept slower speed
 print order
-
 when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
 - planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
-
-do space craft course ... and refactor orbit?
-
-Jupiter moons
-objects with texture (Jupiter)
-
 lock everything on command, lock everything on update ???
-
-slow zone
-
-store "course" as INTERCEPT, ORBIT, TARGET(?) ... try to intercept slower speed
-
 ansi stuff
 what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
 command identification of targets are the first letters of the name (ignore caps) until unambigious -- otherwise error
-
 torps are 00, 01, ..., 09, 10, 11, 12, 13. Last digit is the visual char
 missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are removed when their target disappears
 you can remove multiple missile by "00*". In general, the remove command takes multiple arguments (rm is also remove)
 lay out torpedoes and send them off later, torps & missiles can also be sent after other targets (and possibly not detonate)
-
+--------------------------------------
+identification of target by name .. key= first letters ... handling of keys for space objects ... tab completion
+dont enhance belt (hacked for now). What is the logic here?
 Ilus system
-
 use # or . for ring zone ... how to handle 1377 gates ... when do not draw them all, just representatives
-
-Intercept course not cancelled if object suddenly is out of reach.
 cmd full_stop: an object to a full stop (vel=0, acc=0, course cancelled)
 cmd Reset ID: reread from file
-
 disable superuser commands when in user mode
-
 slow zone
 max speed
-
 output back to client
-
 combat stuff made easy
-
-how are courses implemented (and how shall they be used)
-- interception course: craft/weapons towards (moving) targets, max_g
-
 flag: save world on exit (or error), save frequence
 flag: restore world from newest file on startup
-
-code to read/write distances/time/acceleration
-
-world
-- tick
-- start/stop
-
+speed/acc use format_distance /s /s2
+tick command
 SpaceObject:
 viewing options
-
 pseudo 3d
 --------------------------------------------------------------------------------------------------
-flip-and-burn towards target (moving or stationary)
+"run" should accept other than "seconds" as argument
+Jupiter moons
+objects with texture (Jupiter) ... ASCII art
+gravity
