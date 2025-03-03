@@ -212,10 +212,9 @@ Examples:
     def precmd(self, line):
         self.msg = None
         self.show = True
-        command = line.split(" ")[0]
+        (command, _, rest) = line.partition(' ')
         if command in self._aliases:
-            command = self._aliases[command]
-            line = " ".join([command] + line.split(" ")[1:])
+            line = self._aliases[command] + " " + rest
         line = line.strip().replace("(", "").replace(")", "")
         line = re.sub(rf"{NUMBER}\s*{UNIT}", lambda match: str(interpret_distance(*match.groups())) + " ", line)
         return line.strip()

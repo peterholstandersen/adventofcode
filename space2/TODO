@@ -1,5 +1,5 @@
 
-Show crafts/objects in display
+Show crafts/objects in display or do ls/list / ls -l / ll
 
 Add gate
 Add craft
@@ -8,7 +8,7 @@ Make "course" command
 Make tick command
 On update: perform course
 
-Use partition in command.py instead of split
+help flip-and-burn time
 
 ===================================================================================
 
