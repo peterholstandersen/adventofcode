@@ -22,15 +22,15 @@ def format_time(time, short=True):
     return number + " " + unit
 
 def format_distance(dist):
-    if dist * 10 >= AU:
+    if abs(dist) >= AU / 10:
         dist = dist / AU
         unit = " AU"
     else:
         unit = " km"
-        if dist >= 1000:
+        if abs(dist) >= 1000:
             dist = dist / 1000
             unit = "K km"
-        if dist >= 1000:
+        if abs(dist) >= 1000:
             dist = dist / 1000
             unit = "M km"
     number = f"{dist:,.1f}"
@@ -63,8 +63,9 @@ class View:
     def _get_text(self, universe):
         out = ""
         time_text = universe.clock.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        center_text = f"Center {self.center}" if self.track is None else f"Tracking {self.track}"
+        center_text = f"Center ({format_distance(self.center[0])}, {format_distance(self.center[1])})" if self.track is None else f"Tracking {self.track}\n"
         out += f"{time_text}   {center_text}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
+        out += "\n".join([f"{body.colour_visual}: {body.name}" for body in universe.bodies.values() if body.visual != "."]) # hack
         return out
 
     def update_center(self, universe):
@@ -84,7 +85,7 @@ class View:
         else:
             (c, l) = os.get_terminal_size()
         text = self._get_text(universe)
-        l = l - 6 - text.count("\n")
+        l = l - 5 - text.count("\n")
         visual = self._get_visual(universe, (c, l))
         out = visual_to_string(visual, (c, l))
         out += text
@@ -128,7 +129,7 @@ def test_format_time():
         print(" OK" if ok else " ERROR")
 
 def create_test_view():
-    return View((0, 0), 0.1 * AU, 1)
+    return View((0, 0), 0.3 * AU, 4)
 
 def run_all_tests():
     test_format_time()

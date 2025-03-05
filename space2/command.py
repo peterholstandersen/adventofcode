@@ -72,8 +72,40 @@ class Command(cmd.Cmd):
             self.show = False
             return None
 
+    def _parse_position(self, arg, usage):
+        # ident, x, and y specifies the absolute position
+        # center A   => ident=A, x=None, y=None
+        # center 1,2 => ident=None, x=1, y=2
+        #
+        # dx, dy, degrees and dist specifies a relative position (if any)
+        # center A rel (1,2)  => dx=1, dy=2, degrees=None, dist=None
+        # center A rel 10d 20 => dx=None, dy=None, degrees=10, dist=20
+        match = re.match(rf"{ABS_POS}\s*{REL_POS}?$", arg)
+        if not match:
+            self.msg = f"usage: {usage}"
+            return None
+        ident = match.group(1)
+        (x, y, dx, dy, degrees, dist) = tuple(map(safe_float, match.groups()[1:]))
+        if ident is not None:
+            body = self._get_body(ident)
+            if not body:
+                return None
+            (x ,y) = body.position
+        if dx and dy:
+            (x, y) = (x + dx, y + dy)
+        elif degrees and dist:
+            x += sin(radians(degrees)) * dist
+            y += cos(radians(degrees)) * dist
+        return (round(x), round(y))
+
     complete_center = _complete_names
     complete_track = _complete_names
+
+    def do_reset(self, arg):
+        """Reset view"""
+        self.view.center = (0, 0)
+        self.view.scale = 0.3 * AU
+        self.view.enhance = 4
 
     def do_scale(self, arg):
         """Scale the view. Usage: scale <positive number>."""
@@ -123,33 +155,26 @@ Examples:
     center * rel (1 AU, -2 AU)        # center view at (1 AU, -2 AU) relative to *
     center D rel (100K, 100K)         # center view at (100.000 km, 100.000 km) relative to D
         """
-        # ident, x, and y specifies the absolute position
-        # center A   => ident=A, x=None, y=None
-        # center 1,2 => ident=None, x=1, y=2
-        #
-        # dx, dy, degrees and dist specifies a relative position (if any)
-        # center A rel (1,2)  => dx=1, dy=2, degrees=None, dist=None
-        # center A rel 10d 20 => dx=None, dy=None, degrees=10, dist=20
         usage = "center <absolute_pos> [ rel <relative_pos> ]"
-        match = re.match(rf"{ABS_POS}\s*{REL_POS}?$", arg)
-        if not match:
-            self.msg = f"usage: {usage}"
+        xy = self._parse_position(arg, usage)
+        if xy is None:
             return
-        ident = match.group(1)
-        (x, y, dx, dy, degrees, dist) = tuple(map(safe_float, match.groups()[1:]))
-        if ident is not None:
-            body = self._get_body(ident)
-            if not body:
-                return
-            (x ,y) = body.position
-        if dx and dy:
-            (x, y) = (x + dx, y + dy)
-        elif degrees and dist:
-            x += sin(radians(degrees)) * dist
-            y += cos(radians(degrees)) * dist
         self.view.track = None
-        self.view.center = (round(x), round(y))
+        self.view.center = xy
         self.msg = f"Center set to ({v.format_distance(self.view.center[0])}, {v.format_distance(self.view.center[1])})"
+
+    def do_course(self, arg):
+        """
+Usage: course <absolute_pos> [ rel <realative_pos> ]"
+Set course to a point in space. It may be specified as coordinates or a particular space object (target).
+Optionally, use "rel" to set the targget to a position relative to a fixed position.
+        """
+        usage = "course <absolute_pos> [ rel <realative_pos> ]"
+        xy = self._parse_position(arg, usage)
+        if xy is None:
+            return
+
+        print("course: ", xy)
 
     def do_track(self, arg):
         """Track a space object. For example, track J"""
@@ -163,6 +188,15 @@ Examples:
             self.view.track = body.name
             self.view.update_center(self.universe)
             self.msg = f"Tracking {self.view.track}"
+
+    def do_tick(self, arg):
+        """Usage: tick <seconds>. Jump forward in time. Does not start the universe clock (nor stops it)"""
+        step = safe_float(arg)
+        if step is None:
+            self.msg = "usage: tick <seconds>"
+            self.show = False
+            return
+        self.universe.clock.timestamp += datetime.timedelta(seconds=round(step))
 
     def do_run(self, arg):
         """Usage: run <seconds>. Start the universe clock in increments of <seconds>"""
@@ -243,7 +277,8 @@ def run_all_tests(command, universe, view):
         ("sca", ["1", "2"]),
         ("enhance", ["10", "-20", "30", "-1"]),
         ("center", ["v", "0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
-        ("track",  ["m", "0", "", "(1,2)"])
+        ("track",  ["m", "0", "", "(1,2)"]),
+        ("course", ["m", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"])
     ]
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]
     [ test_onecmd(command, text) for text in cmds ]

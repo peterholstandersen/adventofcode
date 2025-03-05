@@ -141,26 +141,26 @@ def create_test_universe(start_thread=False):
     last_update = datetime.datetime(2030, 8, 20, 16, 49, 7, 652303)
     clock = c.make_clock(last_update + datetime.timedelta(1), start_thread=start_thread)
     bodies = dict()
-    bodies["Sun"] = SpaceObject("Sun",     (0, 0),         YELLOW,           "*", 696340, "star_sun.png", None, None, None)
-    bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0), DARK_GRAY, "m",   2440, "...", "Sun",  0.4 * AU,    88)
-    bodies["Venus"] = SpaceObject("Venus",   ( 0.7 * AU, 0), YELLOW,      "v",   6000, "...", "Sun",  0.7 * AU,   225)
-    bodies["Earth"] = SpaceObject("Earth",   ( 1.0 * AU, 0), BLUE,        "e",   6400, "...", "Sun",  1.0 * AU,   365)
-    bodies["Mars"] = SpaceObject("Mars",    ( 1.5 * AU, 0), RED,          "m",   6400, "...", "Sun",  1.5 * AU,   687)
-    bodies["Ceres"] = SpaceObject("Ceres",   ( 2.8 * AU, 0), DARK_GRAY,   "c",    490, "...", "Sun",  2.8 * AU,  1682)
-    bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0), BROWN,    "J",  70000, "...", "Sun",  5.2 * AU,  4333)
-    bodies["Saturn"] = SpaceObject("Saturn",  ( 9.6 * AU, 0), YELLOW,     "S",  58000, "...", "Sun",  9.6 * AU, 10759)
-    bodies["Uranus"] = SpaceObject("Uranus",  (19.2 * AU, 0), LIGHT_CYAN, "U",  15800, "...", "Sun", 19.2 * AU, 30687)
-    bodies["Neptun"] = SpaceObject("Neptun",  (30.0 * AU, 0), LIGHT_BLUE, "N",  15300, "...", "Sun", 30.0 * AU, 60190)
-    bodies["Pluto"] = SpaceObject("Pluto",   (39.5 * AU, 0), DARK_GRAY,   "p",   2400, "...", "Sun", 39.5 * AU, 90560)
-
+    bodies["Sun"] = SpaceObject("Sun",         ( 0, 0),        YELLOW,     "*", 696340, "star_sun.png", None, None, None)
+    bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0), DARK_GRAY,  "m",   2440, "...", "Sun",  0.4 * AU,    88)
+    bodies["Venus"] =   SpaceObject("Venus",   ( 0.7 * AU, 0), YELLOW,     "v",   6000, "...", "Sun",  0.7 * AU,   225)
+    bodies["Earth"] =   SpaceObject("Earth",   ( 1.0 * AU, 0), BLUE,       "e",   6400, "...", "Sun",  1.0 * AU,   365)
+    bodies["Mars"] =    SpaceObject("Mars",    ( 1.5 * AU, 0), RED,        "m",   6400, "...", "Sun",  1.5 * AU,   687)
+    bodies["Ceres"] =   SpaceObject("Ceres",   ( 2.8 * AU, 0), DARK_GRAY,  "c",    490, "...", "Sun",  2.8 * AU,  1682)
+    bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0), BROWN,      "J",  70000, "...", "Sun",  5.2 * AU,  4333)
+    bodies["Saturn"] =  SpaceObject("Saturn",  ( 9.6 * AU, 0), YELLOW,     "S",  58000, "...", "Sun",  9.6 * AU, 10759)
+    bodies["Uranus"] =  SpaceObject("Uranus",  (19.2 * AU, 0), LIGHT_CYAN, "U",  15800, "...", "Sun", 19.2 * AU, 30687)
+    bodies["Neptun"] =  SpaceObject("Neptun",  (30.0 * AU, 0), LIGHT_BLUE, "N",  15300, "...", "Sun", 30.0 * AU, 60190)
+    bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0), DARK_GRAY,   "p",   2400, "...", "Sun", 39.5 * AU, 90560)
     # dont enhance!
-    bodies["Asteroid Belt"]   = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
-
+    bodies["Asteroid Belt"] = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
     bodies["C ring"] = Ring(75000, 85000, 1,   "C ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     bodies["B ring"] = Ring(92000, 115000, 1,  "B ring",   (0, 0),    FAINT + BROWN,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     bodies["A ring"] = Ring(120000, 136000, 1, "A ring",   (0, 0),    YELLOW,  ".", None, "...", "Sun", 9.6 * AU, 10759)
+    bodies["Sol Gate"] = SpaceObject("Sol Gate", (21.2 * AU, 0), LIGHT_CYAN, "o", 1000, "...", None, None, None)
 
-    # bodies["o"] = SpaceObject("o", "Moon",    (AU, AU),       LIGHT_GRAY, "m",   1737, "...", "e", 384400, 27)
+    bodies["Heroes"] = SpaceObject("Heroes", (4 * AU, 2 * AU), LIGHT_WHITE, "x", 0.040, "...", None, None, None)
+
 
     universe = Universe(bodies, clock, last_update)
     for body in bodies.values():

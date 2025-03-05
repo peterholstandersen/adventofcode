@@ -1,24 +1,22 @@
 
-Show crafts/objects in display or do ls/list / ls -l / ll
-
-Add gate
-Add craft
-Default craft in Command
+view: trajectory
 Make "course" command
-Make tick command
-On update: perform course
+On update time: perform course
 
 help flip-and-burn time
+
+Default craft in Command: show in prompt
+
+craft in list: speed, acc, course, tti
 
 ===================================================================================
 
 Course: Orbit, Target
-x: command, default object, tab-completion of names
+x: command or just "x:" to change default or default x
 multiple systems / travel through gate
 poi
-hide/show
-monitor
-Make list command
+hide/show object  &  list/unlist object
+view command
 
 interception course: craft/weapons towards (moving) targets, max_g
 Intercept cancelled if object suddenly is out of reach.
@@ -54,7 +52,8 @@ SpaceObject:
 viewing options
 pseudo 3d
 --------------------------------------------------------------------------------------------------
-"run" should accept other than "seconds" as argument
+listen for event on resize window?
+"run" and "tick" should accept other than "seconds" as argument
 Jupiter moons
 objects with texture (Jupiter) ... ASCII art
 gravity
