@@ -165,11 +165,25 @@ Examples:
 
     def do_course(self, arg):
         """
-Usage: course <absolute_pos> [ rel <realative_pos> ]"
+Usage: course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
+
 Set course to a point in space. It may be specified as coordinates or a particular space object (target).
-Optionally, use "rel" to set the targget to a position relative to a fixed position.
+Optionally, use "rel" to set the target to a position relative to a fixed position.
+Optionally, use "vel (dx,dy)" or "velocity (dx,dy)" to specificy the desired velocity when reaching the target. Defaults to (0,0).
+Optionally, use "max Ng" to specificy the maximum amount of gs allowed. Defaults to 1g.
+
+Examples:
+course e rel (100,100) velocity (0,100) max 10g
+course e rel (100,100) vel (0,100) 10g
         """
-        usage = "course <absolute_pos> [ rel <realative_pos> ]"
+        usage = "course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
+        xy = (1000, 0)
+        velocity = (10, 20)
+        max_acc = 5 * 9.81
+
+
+
+
         xy = self._parse_position(arg, usage)
         if xy is None:
             return
