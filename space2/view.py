@@ -38,6 +38,28 @@ def format_distance(dist):
         number = f"{dist:,.0f}"
     return number + unit
 
+def format_acceleration(acc, as_g=False):
+    if as_g:
+        # as g: two significant digits for easy reading
+        acc = acc / 9.81
+        a = f"{acc:.2g}"
+        b = float(a)
+        number = f"{b:,.2f}".rstrip("0").rstrip(".")
+        if number == "-0":
+            number = "0"
+        return number + " g"
+    # as m/s2: at most one decimal place. \u00B2 is 2 superscript. Show with more significant figures to appear more "scientific"
+    unit = " m/s\u00B2"
+    if abs(acc) >= 1000:
+        acc = acc / 1000
+        unit = " km/s\u00B2"
+    if abs(acc) >= 10:
+        acc = round(acc)
+    number = f"{acc:,.1f}".rstrip("0").rstrip(".")
+    if number == "-0":
+        number = "0"
+    return number + unit
+
 class View:
     track = None       # If track is a string, the center is updated to the position of the object before showing
     center = None      # Coordinates
@@ -114,6 +136,31 @@ def visual_to_string(visual, size_cl):
 # Planet N  Neptune 30.0 LIGHT_BLUE 60190
 # Planet p  Pluto   39.5 DARK_GRAY  90560
 
+def test_format_acceleration():
+    for as_g in [False, True]:
+        for sign in [-1, 1]:
+            print(format_acceleration(0, as_g))
+            print(format_acceleration(sign * 0.0001, as_g))
+            print(format_acceleration(sign * 0.001, as_g))
+            print(format_acceleration(sign * 0.01, as_g))
+            print(format_acceleration(sign * 0.02, as_g))
+            print(format_acceleration(sign * 0.1, as_g))
+            print(format_acceleration(sign * 1, as_g))
+            print(format_acceleration(sign * 1.1, as_g))
+            print(format_acceleration(sign * 1.55, as_g))
+            print(format_acceleration(sign * 10, as_g))
+            print(format_acceleration(sign * 11, as_g))
+            print(format_acceleration(sign * 15, as_g))
+            print(format_acceleration(sign * 20, as_g))
+            print(format_acceleration(sign * 100, as_g))
+            print(format_acceleration(sign * 1110, as_g))
+            print(format_acceleration(sign * 22220, as_g))
+            print(format_acceleration(sign * 333330, as_g))
+            print(format_acceleration(sign * 0.05 * 9.81, as_g))
+            print(format_acceleration((1, 2), as_g))
+            print(format_acceleration((sign, 2000 * sign), as_g))
+        print()
+
 def test_format_time():
     year = 30 * 24 * 3600 * 12
     test_time = [(1, "1 s", "1 second"), (60, "1 m", "1 minute"), (3600, "1 h", "1 hour"), (24 * 3600, "1 d", "1 day"),
@@ -132,6 +179,7 @@ def create_test_view():
     return View((0, 0), 0.3 * AU, 4)
 
 def run_all_tests():
+    test_format_acceleration()
     test_format_time()
     (universe, clock) = u.create_test_universe()
     view = create_test_view()

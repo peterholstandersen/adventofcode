@@ -12,8 +12,8 @@ class SpaceObject:
     colour_visual = None
     radius = None
     position = None
-    velocity = None
-    acceleration = None
+    velocity = (0, 0)
+    acceleration = (0, 0)
     course = None
 
     def __init__(self, name, position, colour, visual, radius, image, course):
@@ -149,7 +149,7 @@ def create_test_universe(start_thread=False):
     #bodies["B ring"] = Ring(92000, 115000, 1,  "B ring",   (0, 0),    FAINT + BROWN,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     #bodies["A ring"] = Ring(120000, 136000, 1, "A ring",   (0, 0),    YELLOW,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     #bodies["Sol Gate"] = SpaceObject("Sol Gate", (21.2 * AU, 0), LIGHT_CYAN, "o", 1000, "...", None, None, None)
-    bodies["Heroes"] = SpaceObject("Heroes", (4 * AU, 2 * AU), LIGHT_WHITE, "x", 0.040, "...", None)
+    bodies["Heroes"] = SpaceObject("Heroes", (- 4 * AU, 0), LIGHT_WHITE, "x", 0.040, "...", None)
 
     universe = Universe(bodies, clock, last_update)
     for body in bodies.values():

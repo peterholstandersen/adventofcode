@@ -2,6 +2,8 @@ from common import *
 from utils import *
 import universe as u
 import view as v
+import course as c
+import traceback
 
 def interpret_distance(number, prefix, unit):
     number = float(number)
@@ -176,19 +178,46 @@ Examples:
 course e rel (100,100) velocity (0,100) max 10g
 course e rel (100,100) vel (0,100) 10g
         """
+        self.show = False
         usage = "course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
-        xy = (1000, 0)
-        velocity = (10, 20)
-        max_acc = 5 * 9.81
 
-
-
-
-        xy = self._parse_position(arg, usage)
-        if xy is None:
+        end_pos = self._parse_position(arg, usage)
+        if not end_pos:
             return
+        me = self.universe.bodies.get("Heroes")
+        start_pos = me.position
+        start_velocity = (0, 0)
+        end_velocity = (0, 100000)
+        max_acc = 1 * 9.81
 
-        print("course: ", xy)
+        if is_running_in_terminal():
+            print("start_pos: ", start_pos)
+            print("end_pos:   ", end_pos)
+            print("start vel: ", start_velocity)
+            print("end vel:   ", end_velocity)
+            print("max acc:   ", max_acc)
+        else:
+            print("start_pos=", start_pos, "start_vel=", start_velocity, "end_vel=", end_velocity, end="  ")
+
+        print(".... calculating course")
+        course = c.doit(start_pos, end_pos, start_velocity, end_velocity, max_acc)
+        if not course:
+            print(f"Unable to plot course from {start_pos} to {end_pos}  start_vel={start_velocity}  end_velocity={end_velocity}  max_acc={max_acc}")
+            return
+        (t1, t2, burn, brake) = course
+        burn_x = burn[0] / 9.81
+        burn_y = burn[1] / 9.81
+
+        f = lambda acc: f"({v.format_acceleration(acc[0])}, {v.format_acceleration(acc[1])})"
+        burn_g = sqrt(burn[0]**2 + burn[1]**2)
+        brake_g = sqrt(burn[0]**2 + burn[1]**2)
+        try:
+            print(f"Course: burn: {v.format_time(t1, short=False)} {f(burn)} [{v.format_acceleration(burn_g, as_g=True)}]  brake: {v.format_time(t2, short=False)} {f(brake)} [{v.format_acceleration(burn_g, as_g=True)}]")
+        except:
+            traceback.print_exc()
+            print("Error:", t1, t2, burn, burn_g, brake, brake_g)
+
+
 
     def do_track(self, arg):
         """Track a space object. For example, track J"""
@@ -278,7 +307,7 @@ course e rel (100,100) vel (0,100) 10g
 
 def test_onecmd(commmand, line):
     quoted_line = "'" + line + "'"
-    print(f"onecmd {quoted_line:<25} # ", end="")
+    print(f"onecmd {quoted_line:<30} # ", end="")
     line = command.precmd(line)
     stop = command.onecmd(line)
     command.postcmd(stop, line)
@@ -292,7 +321,8 @@ def run_all_tests(command, universe, view):
         ("enhance", ["10", "-20", "30", "-1"]),
         ("center", ["v", "0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
         ("track",  ["m", "0", "", "(1,2)"]),
-        ("course", ["m", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"])
+        # ("course", ["*", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"])
+        ("course", ["*"])
     ]
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]
     [ test_onecmd(command, text) for text in cmds ]

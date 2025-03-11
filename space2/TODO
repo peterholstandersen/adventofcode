@@ -1,4 +1,13 @@
 
+Plot traj
+Try alternative course calculations
+
+course:
+align coordinate system
+handle "dx == 0"
+
+
+
 view: trajectory
 Make "course" command
 On update time: perform course
