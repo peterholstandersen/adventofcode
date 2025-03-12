@@ -74,7 +74,7 @@ class View:
 
     def _get_visual(self, universe, size_cl):
         offset_cl = (size_cl[0] // 2, size_cl[1] // 2)
-        # (min_x, max_y) is correct since line 0 represents the maximum y value
+        # max_y in (min_x, max_y) is correct, since line numbers are the y-axis reversed
         (min_x, max_y) = cl_to_xy((0, 0), offset_cl, self.center, self.scale)
         (max_x, min_y) = cl_to_xy(size_cl, offset_cl, self.center, self.scale)
         visual = dict()

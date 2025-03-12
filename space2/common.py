@@ -52,5 +52,3 @@ DEFAULT_COLOUR = END # LIGHT_WHITE
 ROOT = "/home/peter/PycharmProjects/adventofcode/spacemaster"  # for now
 AU = 149.6e+06         # 149.600.000 km
 LIGHT_YEAR = 9.461e+12 # 9.461 trillion km
-
-# define paths

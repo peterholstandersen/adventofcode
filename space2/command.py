@@ -2,8 +2,7 @@ from common import *
 from utils import *
 import universe as u
 import view as v
-import course as c
-import traceback
+import course
 
 def interpret_distance(number, prefix, unit):
     number = float(number)
@@ -26,14 +25,16 @@ REL_POS = rf"(?:{REL_POS1}|{REL_POS2})"
 class Command(cmd.Cmd):
     universe = None
     view = None
+    default_craft = None
     show = None            # update the view in postcmd
     msg = None             # msg to print after updating the view in postcmd
     _aliases = None
 
-    def __init__(self, universe, view, *args):
+    def __init__(self, universe, view, default_craft, *args):
         super().__init__(*args)
         self.universe = universe
         self.view = view
+        self.default_craft = default_craft
         self._init_aliases()
 
     def _init_aliases(self):
@@ -82,7 +83,7 @@ class Command(cmd.Cmd):
         # dx, dy, degrees and dist specifies a relative position (if any)
         # center A rel (1,2)  => dx=1, dy=2, degrees=None, dist=None
         # center A rel 10d 20 => dx=None, dy=None, degrees=10, dist=20
-        match = re.match(rf"{ABS_POS}\s*{REL_POS}?$", arg)
+        match = re.match(rf"{ABS_POS}\s*{REL_POS}?", arg)
         if not match:
             self.msg = f"usage: {usage}"
             return None
@@ -100,6 +101,7 @@ class Command(cmd.Cmd):
             y += cos(radians(degrees)) * dist
         return (round(x), round(y))
 
+    # cmd module functions for tab-completion of space object names in command arguments
     complete_center = _complete_names
     complete_track = _complete_names
 
@@ -179,38 +181,31 @@ course e rel (100,100) velocity (0,100) max 10g
 course e rel (100,100) vel (0,100) 10g
         """
         self.show = False
+        if self.default_craft is None:
+            self.msg = "Default craft is not set"
+            return
         usage = "course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
-        end_pos = self._parse_position(arg, usage)
+        if len(arg) == 0:
+            self.msg = usage
+            return
+        end_pos = self._parse_position(arg, "Unable to determine target position. Usage: " + usage)
         if not end_pos:
             return
-        me = self.universe.bodies.get("Heroes")
-        start_pos = me.position
-        start_velocity = (0, 0)
-        end_velocity = (0, 100000)
-        max_acc = 1 * 9.81
-        if is_running_in_terminal():
-            print("start_pos: ", start_pos)
-            print("end_pos:   ", end_pos)
-            print("start vel: ", start_velocity)
-            print("end vel:   ", end_velocity)
-            print("max acc:   ", max_acc)
-        else:
-            print("start_pos=", start_pos, "start_vel=", start_velocity, "end_vel=", end_velocity, end="  ")
-        print(".... calculating course")
-        course = c.doit(start_pos, end_pos, start_velocity, end_velocity, max_acc)
-        if not course:
-            print(f"Unable to plot course from {start_pos} to {end_pos}  start_vel={start_velocity}  end_velocity={end_velocity}  max_acc={max_acc}")
+        start_pos = self.default_craft.position
+        start_velocity = self.default_craft.velocity
+        match = re.match(rf".*vel.*\s+{COORDS}.*", arg)
+        end_velocity = (float(match.group(1)), float(match.group(2))) if match else (0, 0)
+        match = re.match(r".*([0-9]+)\s*g.*", arg)
+        max_acc = float(match.group(1)) * 9.81 if match else 9.81
+        print(f"start_pos={start_pos}  end_pos={end_pos}  start_vel={start_velocity}  end_vel={end_velocity}  max_acc={max_acc} ... calculating course ...")
+        new_course = course.compute_course(start_pos, end_pos, start_velocity, end_velocity, max_acc)
+        if not new_course:
+            print(f"Unable to plot course, sorry.")
             return
-        (t1, t2, burn, brake) = course
-        burn_x = burn[0] / 9.81
-        burn_y = burn[1] / 9.81
-        f = lambda acc: f"({v.format_acceleration(acc[0])}, {v.format_acceleration(acc[1])})"
-        burn_g = sqrt(burn[0]**2 + burn[1]**2)
-        brake_g = sqrt(burn[0]**2 + burn[1]**2)
-        print(f"Course: burn: {v.format_time(t1, short=False)} {f(burn)} [{v.format_acceleration(burn_g, as_g=True)}]  brake: {v.format_time(t2, short=False)} {f(brake)} [{v.format_acceleration(burn_g, as_g=True)}]")
+        (burn_duration, brake_duration, burn, brake) = new_course
         now = self.universe.clock.timestamp.timestamp()
-        me.course = c.BurnSequence(me, [(now, now + t1, burn), (now + t1, now + t1 + t2, brake)])
-        print(me.course)
+        self.default_craft.course = course.BurnSequence(self.default_craft, [(now, now + burn_duration, burn), (now + burn_duration, now + burn_duration + brake_duration, brake)])
+        self.msg = str(self.default_craft.course)
 
     def do_track(self, arg):
         """Track a space object. For example, track J"""
@@ -242,7 +237,7 @@ course e rel (100,100) vel (0,100) 10g
         if step is None:
             self.msg = usage
         elif self.universe.clock.start(datetime.timedelta(seconds=round(step)), lambda: self.view.show(self.universe)):
-            self.msg = "The Universe starts moving" + (". You feed like a God" if randint(1, 100) == 1 else "")
+            self.msg = "The Universe starts moving" + (". You feel like a God" if randint(1, 100) == 1 else "")
         else:
             self.msg = f"Internal error: Failed to start clock. clock_thread.is_alive()={self.universe.clock.thread.is_alive()}"
 
@@ -268,7 +263,7 @@ course e rel (100,100) vel (0,100) 10g
         super().do_help(arg)
 
     def emptyline(self):
-        # if not defined, it will repeart the last command. We just want to update the view (handled in postcmd)
+        # if not defined, it will repeart the last command. We just want to update the view (which is handled in postcmd)
         return
 
     def default(self, line):
@@ -314,8 +309,7 @@ def run_all_tests(command, universe, view):
         ("enhance", ["10", "-20", "30", "-1"]),
         ("center", ["v", "0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
         ("track",  ["m", "0", "", "(1,2)"]),
-        # ("course", ["*", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"])
-        ("course", ["*"])
+        ("course", ["*", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"]),
     ]
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]
     [ test_onecmd(command, text) for text in cmds ]
@@ -325,7 +319,8 @@ if __name__ == '__main__':
     view = v.View((0, 0), AU // 10, 1)
     #do_run(universe, view, 10)
     #do_stop(universe, view)
-    command = Command(universe, view)
+    default_craft = universe.bodies.get("Heroes")
+    command = Command(universe, view, default_craft)
     if is_running_in_terminal():
         universe.clock.start_thread()
         # command_thread = threading.Thread(target=command.cmdloop)

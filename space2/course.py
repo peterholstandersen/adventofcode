@@ -1,13 +1,11 @@
 from common import *
-from sympy import Symbol, pprint, Rational, S, sin, cos, pi, Point, N
-from sympy.solvers import solve, nsolve, nonlinsolve, solveset, linsolve
+from sympy import Symbol, N
+from sympy.solvers import nonlinsolve
 import mpmath
 import universe as u
 import view as v
 
-import sys
-
-def compute_course(start_point, end_point, start_velocity, end_velocity, a1x):
+def compute_course1(start_point, end_point, start_velocity, end_velocity, a1x):
     mpmath.mp.dps = 3
     t1 = Symbol("t1", positive=True, real=True)
     t2 = Symbol("t2", positive=True, real=True)
@@ -15,6 +13,23 @@ def compute_course(start_point, end_point, start_velocity, end_velocity, a1x):
     if sx <= 0:
         print(f"sx={sx} <= 0: not handled yet")
         return
+    # we fix the burn and brake acceleration for the x-axis and compute the needed burn and brake acc for the y-axis
+    # without any limit for the total acceration
+    #
+    # 1 (start)           2                  3 (end)
+    # +-------------------+------------------+
+    # |>>>>>>>burn>>>>>>>>|<<<<<brake<<<<<<<<|
+    #
+    # (a1x, a1y) is the acceration from 1->2
+    # (a2x, a2y) is the acceration from 2->3
+    # (v1x, v1y) is the velocity at 1 (start velocity)
+    # (v2x, v2y) is the velocity at 2
+    # (v3x, v3y) is the velocity at 3 (actual end velocity)
+    # (v4x, v4y) is the desired end velocity at 3
+    # (s1x, s1y) is the distance from 1->2
+    # (s2x, s2y) is the distance from 2->3
+    # (sx, sy) is the distance from 1->3 (total distance travelled) -- given by start and end positions
+
     (a1x, a1y) = ( a1x, Symbol("a1y", real=True))
     (a2x, a2y) = (-a1x, Symbol("a2y", real=True))
     (v1x, v1y) = start_velocity
@@ -31,51 +46,48 @@ def compute_course(start_point, end_point, start_velocity, end_velocity, a1x):
     f2 = s1y + s2y - sy
     f3 = v3x - v4x
     f4 = v3y - v4y
-
-    solution = nonlinsolve((f1, f2, f3, f4), (t1, t2, a1y, a2y))
+    solution = nonlinsolve((f1, f2, f3, f4), (t1, t2, a1y, a2y))   # find t1,t2,a1y,a2y for f1,f2,f3,f4 = 0
     for sol in solution:
-        values={}
+        values = {}
         ns = [ var.evalf(subs=values) for var in sol ]
+        # only accept real numbers and positive numbers for t1 and t2
         if all([n.is_real for n in ns]) and ns[0] >= 0 and ns[1] >= 0:
             xs = "  ".join([f"{float(n):.1f}" for n in ns])
             burn = (N(a1x), N(ns[2]))
             brake = (N(a2x), N(ns[3]))
             return (ns[0], ns[1], burn, brake)
 
-def doit(start_point, end_point, start_velocity, end_velocity, max_acc):
-    #max_acc = 10
-    #start_point = (0, 0)
-    #end_point = (1000, 100)
-    #start_velocity = (0, 0)
-    #end_velocity = (0, 100)
+def compute_course(start_point, end_point, start_velocity, end_velocity, max_acc):
+    # find the fastest solution for with acceleration <= max_acc
     high = max_acc
     low = 0.01
-    oks = []
-    while abs(high - low) > 0.05:
+    valid_solutions = []
+    while abs(high - low) > 0.01:
         mid = (high + low) / 2
         x_acceleration = mid
-        course = compute_course(start_point, end_point, start_velocity, end_velocity, mid)
-        if course:
-            (t1, t2, burn, brake) = course
-            t1 = round(t1, 1)
-            t2 = round(t2, 1)
-            course = (t1, t2, (round(burn[0], 1), round(burn[1], 1)), (round(brake[0], 1), round(brake[1], 1)))
-            (t1, t2, burn, brake) = course
-            b1 = sqrt(burn[0] * burn[0] + burn[1] * burn[1])
-            b2 = sqrt(brake[0] * brake[0] + brake[1] * brake[1])
-            #print(f"mid={mid:.1f}  t1={t1:.1f}  t2={t2:.1f}  burn=({burn[0]:.1f},{burn[1]:.1f}) ({b1:.1f})  brake=({brake[0]:.1f},{brake[1]:.1f}) ({b2:.1f})", end="  ")
-            if b1 <= max_acc and b2 <= max_acc:
-                oks.append(course)
-                low = mid
-            else:
-                high = mid
+        course = compute_course1(start_point, end_point, start_velocity, end_velocity, mid)
+        if course is None:
+            high = mid
+            continue
+        f = lambda x: float(round(x, 1))            # x is a Float, must be converted to float
+        g = lambda xy: (f(xy[0]), f(xy[1]))
+        h = lambda xy: sqrt(xy[0]**2 + xy[1]**2)
+        (t1, t2, burn, brake) = course
+        (t1, t2, burn, brake) = (f(t1), f(t2), g(burn), g(brake))
+        course = (t1, t2, burn, brake)
+        # print(f"mid={mid:.1f}  t1={t1:.1f}  t2={t2:.1f}  burn=({burn[0]:.1f},{burn[1]:.1f}) ({b1:.1f})  brake=({brake[0]:.1f},{brake[1]:.1f}) ({b2:.1f})")
+        if h(burn) <= max_acc and h(brake) <= max_acc:
+            valid_solutions.append(course)
+            low = mid
         else:
             high = mid
-    oks = list(sorted(oks, key=lambda a: a[0] + a[1]))
-    (t1, t2, (bu1, bu2), (br1, br2)) = oks[0]
-    return (float(t1), float(t2), (float(bu1), float(bu2)), (float(br1), float(br2)))
+    if len(valid_solutions) == 0:
+        return None
+    valid_solutions = list(sorted(valid_solutions, key=lambda course: course[0] + course[1]))
+    return valid_solutions[0]
 
 class Course:
+    # base class
     def __init__(self):
         pass
 
@@ -105,20 +117,10 @@ class Orbit(Course):
             return (x + dx, y + dy)
 
     def view(self, now=0):
-        return "" # f"orbiting {self.center}"
+        return ""
 
     def __str__(self):
         return f"Orbit({self.center}, {v.format_distance(self.distance)}, {self.orbit_time} days)"
-
-def get_burn_durations(sequence, last_update, now):
-    result = []
-    for (t1, t2, value) in sequence:
-        if t2 <= last_update or now <= t1:
-            continue
-        t1 = max(t1, last_update)
-        t2 = min(t2, now)
-        result.append((t2 - t1, value))
-    return result
 
 class BurnSequence(Course):
     body = None
@@ -127,16 +129,15 @@ class BurnSequence(Course):
     def __init__(self, body, sequence, *args):
         self.body = body
         gaps = []
-        for ((_, t2a, __), (t1b, ___, ____)) in zip(sequence, sequence[1:]):
-            if t2a != t1b:
-                gaps.append((t2a, t1b, (0, 0)))
+        for ((_, end_time_1, _), (start_time_2, _, _)) in zip(sequence, sequence[1:]):
+            if end_time_1 != start_time_2:
+                gaps.append((end_time_1, start_time_2, (0, 0)))
         self.sequence = sorted(sequence + gaps)
         super().__init__(*args)
 
     def calculate_position(self, universe, body, last_update, now):
         # TODO
-        pos = self.body.pos
-        return (0, 0)
+        return self.body.pos
 
     def view(self, now):
         sequence2 = [ (max(now, t1), t2, acc) for (t1, t2, acc) in self.sequence if t2 > now ]
@@ -150,6 +151,16 @@ class BurnSequence(Course):
 
 # ===================================================================
 
+def test_burn_durations(sequence, last_update, now):
+    result = []
+    for (t1, t2, value) in sequence:
+        if t2 <= last_update or now <= t1:
+            continue
+        t1 = max(t1, last_update)
+        t2 = min(t2, now)
+        result.append((t2 - t1, value))
+    return result
+
 def flip_and_burn_time(dist, max_g):
     dist = dist * 1000
     max_a = max_g * 9.81
@@ -159,14 +170,10 @@ def flip_and_burn_time(dist, max_g):
     time = 2 * half_time
     print(f"Time to flip-and-burn {v.format_distance(dist / 1000)} at max {max_g}g: {v.format_time(time, short=False)}")
 
-def test_it():
-    course = Target((100, 100), 9.81)
-    print(course)
-
 if __name__ == "__main__":
-    print(get_burn_durations([], 10, 20))
-    print(get_burn_durations([(6, 17, (1, 1))], 0, 15))
-    print(get_burn_durations([(2, 5, (1, 1)), (5, 9, (2, 2)), (9, 12, (1, 0))], 3, 100))
+    print(test_burn_durations([], 10, 20))
+    print(test_burn_durations([(6, 17, (1, 1))], 0, 15))
+    print(test_burn_durations([(2, 5, (1, 1)), (5, 9, (2, 2)), (9, 12, (1, 0))], 3, 100))
     flip_and_burn_time(10 * AU, 2)
     burn_sequence = BurnSequence(None, [(10, 1000000, (1, 1)), (2000000, 2500000, (2, 3))])
     print(burn_sequence.sequence)
