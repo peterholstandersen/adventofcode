@@ -1,41 +1,48 @@
 
-Plot traj
-Try alternative course calculations
+Whatca want?
+- complete course 0.1
+- wow effect
+  . matplotlib!
+- fiddle around
+- combat
+- for next playsession (what exactly?) -- fly through ring, new systems, dark god interception -- only combat would be needed, but will not repeat that
 
-course:
-align coordinate system
-handle "dx == 0"
+Complete course 0.1:
+- cleanup course (and command and view?)
+- plot traj
 
+Tech dept
+- rename timestamp in clock
 
+Fiddle
+- center (0,0) => Sun
+- format info text on view
+- flip-and-burn time
+- craft in list: speed, acc, course, tti
+- default craft in Command: show in prompt
 
-view: trajectory
-Make "course" command
-On update time: perform course
-
-help flip-and-burn time
-
-Default craft in Command: show in prompt
-
-craft in list: speed, acc, course, tti
-
+Course 1.0
+- Try alternative course calculations
+- Set course display text (i.e., course * or course * rel ... or course (0,0))
+- On update time: perform course
+- align coordinate system
+- handle "dx == 0"
 ===================================================================================
 
 Course: Orbit, Target
-x: command or just "x:" to change default or default x
 multiple systems / travel through gate
 poi
 hide/show object  &  list/unlist object
-view command
+view <spaceobject> command => open image file
 
 interception course: craft/weapons towards (moving) targets, max_g
 Intercept cancelled if object suddenly is out of reach.
 try to intercept slower speed
-print order
+spaceobject view order
 when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
 - planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
 lock everything on command, lock everything on update ???
-ansi stuff
-what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
+verify: what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
 command identification of targets are the first letters of the name (ignore caps) until unambigious -- otherwise error
 torps are 00, 01, ..., 09, 10, 11, 12, 13. Last digit is the visual char
 missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are removed when their target disappears

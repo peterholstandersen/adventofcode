@@ -180,7 +180,6 @@ course e rel (100,100) vel (0,100) 10g
         """
         self.show = False
         usage = "course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
-
         end_pos = self._parse_position(arg, usage)
         if not end_pos:
             return
@@ -189,7 +188,6 @@ course e rel (100,100) vel (0,100) 10g
         start_velocity = (0, 0)
         end_velocity = (0, 100000)
         max_acc = 1 * 9.81
-
         if is_running_in_terminal():
             print("start_pos: ", start_pos)
             print("end_pos:   ", end_pos)
@@ -198,7 +196,6 @@ course e rel (100,100) vel (0,100) 10g
             print("max acc:   ", max_acc)
         else:
             print("start_pos=", start_pos, "start_vel=", start_velocity, "end_vel=", end_velocity, end="  ")
-
         print(".... calculating course")
         course = c.doit(start_pos, end_pos, start_velocity, end_velocity, max_acc)
         if not course:
@@ -207,17 +204,13 @@ course e rel (100,100) vel (0,100) 10g
         (t1, t2, burn, brake) = course
         burn_x = burn[0] / 9.81
         burn_y = burn[1] / 9.81
-
         f = lambda acc: f"({v.format_acceleration(acc[0])}, {v.format_acceleration(acc[1])})"
         burn_g = sqrt(burn[0]**2 + burn[1]**2)
         brake_g = sqrt(burn[0]**2 + burn[1]**2)
-        try:
-            print(f"Course: burn: {v.format_time(t1, short=False)} {f(burn)} [{v.format_acceleration(burn_g, as_g=True)}]  brake: {v.format_time(t2, short=False)} {f(brake)} [{v.format_acceleration(burn_g, as_g=True)}]")
-        except:
-            traceback.print_exc()
-            print("Error:", t1, t2, burn, burn_g, brake, brake_g)
-
-
+        print(f"Course: burn: {v.format_time(t1, short=False)} {f(burn)} [{v.format_acceleration(burn_g, as_g=True)}]  brake: {v.format_time(t2, short=False)} {f(brake)} [{v.format_acceleration(burn_g, as_g=True)}]")
+        now = self.universe.clock.timestamp.timestamp()
+        me.course = c.BurnSequence(me, [(now, now + t1, burn), (now + t1, now + t1 + t2, brake)])
+        print(me.course)
 
     def do_track(self, arg):
         """Track a space object. For example, track J"""

@@ -85,9 +85,10 @@ class View:
     def _get_text(self, universe):
         out = ""
         time_text = universe.clock.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        center_text = f"Center ({format_distance(self.center[0])}, {format_distance(self.center[1])})" if self.track is None else f"Tracking {self.track}\n"
+        center_text = f"Center ({format_distance(self.center[0])}, {format_distance(self.center[1])})" if self.track is None else f"Tracking {self.track}"
         out += f"{time_text}   {center_text}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
-        out += "\n".join([f"{body.colour_visual}: {body.name}" for body in universe.bodies.values() if body.visual != "."]) # hack
+        f = lambda body: " " + body.course.view(universe.clock.timestamp.timestamp()) if body.course else ""
+        out += "\n".join([f"{body.colour_visual}: {body.name}{f(body)}" for body in universe.bodies.values() if body.visual != "."]) # hack
         return out
 
     def update_center(self, universe):
@@ -157,8 +158,6 @@ def test_format_acceleration():
             print(format_acceleration(sign * 22220, as_g))
             print(format_acceleration(sign * 333330, as_g))
             print(format_acceleration(sign * 0.05 * 9.81, as_g))
-            print(format_acceleration((1, 2), as_g))
-            print(format_acceleration((sign, 2000 * sign), as_g))
         print()
 
 def test_format_time():

@@ -3,7 +3,7 @@ from sympy import Symbol, pprint, Rational, S, sin, cos, pi, Point, N
 from sympy.solvers import solve, nsolve, nonlinsolve, solveset, linsolve
 import mpmath
 import universe as u
-import view
+import view as v
 
 import sys
 
@@ -33,18 +33,16 @@ def compute_course(start_point, end_point, start_velocity, end_velocity, a1x):
     f4 = v3y - v4y
 
     solution = nonlinsolve((f1, f2, f3, f4), (t1, t2, a1y, a2y))
-    # print(solution)
     for sol in solution:
-        values={} # {t2: 1}
+        values={}
         ns = [ var.evalf(subs=values) for var in sol ]
         if all([n.is_real for n in ns]) and ns[0] >= 0 and ns[1] >= 0:
             xs = "  ".join([f"{float(n):.1f}" for n in ns])
             burn = (N(a1x), N(ns[2]))
             brake = (N(a2x), N(ns[3]))
-            # print(xs, f"burn={burn}  brake={brake}")
             return (ns[0], ns[1], burn, brake)
 
-def doit(start_point=(0,0), end_point=(1000, 100), start_velocity=(0,0), end_velocity=(0, 100), max_acc=10):
+def doit(start_point, end_point, start_velocity, end_velocity, max_acc):
     #max_acc = 10
     #start_point = (0, 0)
     #end_point = (1000, 100)
@@ -68,18 +66,14 @@ def doit(start_point=(0,0), end_point=(1000, 100), start_velocity=(0,0), end_vel
             #print(f"mid={mid:.1f}  t1={t1:.1f}  t2={t2:.1f}  burn=({burn[0]:.1f},{burn[1]:.1f}) ({b1:.1f})  brake=({brake[0]:.1f},{brake[1]:.1f}) ({b2:.1f})", end="  ")
             if b1 <= max_acc and b2 <= max_acc:
                 oks.append(course)
-                # we might go higher
                 low = mid
-                #print("OK")
             else:
                 high = mid
-                #print("NOT")
         else:
             high = mid
     oks = list(sorted(oks, key=lambda a: a[0] + a[1]))
     (t1, t2, (bu1, bu2), (br1, br2)) = oks[0]
     return (float(t1), float(t2), (float(bu1), float(bu2)), (float(br1), float(br2)))
-    # print(oks[0])
 
 class Course:
     def __init__(self):
@@ -110,42 +104,21 @@ class Orbit(Course):
             dy = math.cos(angle) * self.distance
             return (x + dx, y + dy)
 
+    def view(self, now=0):
+        return "" # f"orbiting {self.center}"
+
     def __str__(self):
-        return f"Orbit({self.center}, {view.format_distance(self.distance)}, {self.orbit_time} days)"
+        return f"Orbit({self.center}, {v.format_distance(self.distance)}, {self.orbit_time} days)"
 
-def overlaps(a, b):
-    (a1, a2) = a
-    (b1, b2) = b
-    # The intervals are not overlapping if one starts after the other ends. Otherwise they are.
-    #          a begins after b        b begins after a
-    # a1-a2            +------+        +------+
-    # b1-b2    +-----+                         +---------+
-    if b2 < a1 or a2 < b1:
-        return False
-    return True
-
-def foobar(sequence, last_update, now):
+def get_burn_durations(sequence, last_update, now):
     result = []
-    if len(sequence) == 0:
-        return result
-    if sequence[-1][0] < now:
-        sequence = sequence + [(now, (0, 0))]
-    return sequence
-    sequence = [(t1, t2, acc) for ((t1, acc), (t2, _)) in zip(sequence, sequence[1:])]
-    return sequence
-    sequence = [(0, sequence[0][0], (0, 0))] + sequence + [(sequence[-1][1], now, (0, 0))]
-    for (t1, t2, acc) in sequence:
-        start = max(t1, last_update)
-        end = min(t2, now)
-        if start < end:
-            result.append((t2 - t1, acc))
+    for (t1, t2, value) in sequence:
+        if t2 <= last_update or now <= t1:
+            continue
+        t1 = max(t1, last_update)
+        t2 = min(t2, now)
+        result.append((t2 - t1, value))
     return result
-
-xs = foobar([(11, (1,1))], 0, 10)
-print(xs)
-sys.exit()
-xs = foobar([(2, (1,1)), (5, (2, 2)), (9, (0, 0))], 0, 10)
-print(xs)
 
 class BurnSequence(Course):
     body = None
@@ -153,20 +126,27 @@ class BurnSequence(Course):
 
     def __init__(self, body, sequence, *args):
         self.body = body
-        self.sequence = sequence
+        gaps = []
+        for ((_, t2a, __), (t1b, ___, ____)) in zip(sequence, sequence[1:]):
+            if t2a != t1b:
+                gaps.append((t2a, t1b, (0, 0)))
+        self.sequence = sorted(sequence + gaps)
         super().__init__(*args)
 
     def calculate_position(self, universe, body, last_update, now):
+        # TODO
         pos = self.body.pos
+        return (0, 0)
 
-        # filter relevant sequences
-        sequence2 = [ (t1, t2, acc) for (t1, t2, acc) in self.sequence if overlaps((t1, t2), (last_update, now)) ]
+    def view(self, now):
+        sequence2 = [ (max(now, t1), t2, acc) for (t1, t2, acc) in self.sequence if t2 > now ]
+        f = lambda acc: f"({v.format_acceleration(acc[0])}, {v.format_acceleration(acc[1])})"
+        g = lambda acc: f"[{v.format_acceleration(sqrt(acc[0]**2 + acc[1]**2), as_g=True)}]"
+        fg = lambda acc: "on the float" if acc == (0, 0) else f(acc) + " " + g(acc)
+        return ", ".join([ f"{v.format_time(t2 - t1, short=False)} {fg(acc)}" for (t1, t2, acc) in sequence2 ])
 
-
-        return (0,0)
-
-# list of (from, to, acc)
-burn_sequence = Burn(me, [(92138901234, 4239078423, (5, 6)), (42390782340, 39839754, (-5, -1))])
+    def __str__(self):
+        return self.view(0)
 
 # ===================================================================
 
@@ -177,27 +157,31 @@ def flip_and_burn_time(dist, max_g):
     # s = 1/2 * a * t^2 => t = sqrt(2s / a)
     half_time = sqrt(2 * half_dist / max_a)
     time = 2 * half_time
-    print(f"Time to flip-and-burn {view.format_distance(dist / 1000)} at max {max_g}g: {view.format_time(time, short=False)}")
+    print(f"Time to flip-and-burn {v.format_distance(dist / 1000)} at max {max_g}g: {v.format_time(time, short=False)}")
 
 def test_it():
     course = Target((100, 100), 9.81)
     print(course)
 
 if __name__ == "__main__":
-    print(doit())
-    sys.exit()
+    print(get_burn_durations([], 10, 20))
+    print(get_burn_durations([(6, 17, (1, 1))], 0, 15))
+    print(get_burn_durations([(2, 5, (1, 1)), (5, 9, (2, 2)), (9, 12, (1, 0))], 3, 100))
+    flip_and_burn_time(10 * AU, 2)
+    burn_sequence = BurnSequence(None, [(10, 1000000, (1, 1)), (2000000, 2500000, (2, 3))])
+    print(burn_sequence.sequence)
+    print(burn_sequence)
+    print(burn_sequence.view(500000))
+    print(burn_sequence.view(1900000))
+    # print(doit(start_point=(0,0), end_point=(1000, 100), start_velocity=(0,0), end_velocity=(0, 100), max_acc=10))
     (universe, clock) = u.create_test_universe(start_thread=False)
     universe.update()
     heroes = universe.bodies.get("Heroes")
-    #heroes.course = Target(heroes, (0, 0), 9.81)
-    #xy = heroes.course.calculate_position(universe.clock.timestamp, universe.clock.timestamp + datetime.timedelta(seconds=1000))
-    #print("Heroes:", xy)
-    flip_and_burn_time(10 * AU, 2)
     earth = universe.bodies.get("Earth")
     print(earth.course)
     now = clock.timestamp
     print("Earth position:", earth.position)
     clock.start(datetime.timedelta(days=1), lambda: universe.update())
-    time.sleep(3)
-    print("Earth pos +3d: ", earth.position)
+    #time.sleep(3)
+    #print("Earth pos +3d: ", earth.position)
     clock.terminate()
