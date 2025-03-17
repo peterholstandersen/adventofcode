@@ -110,7 +110,7 @@ class Orbit(Course):
             return None
         else:
             (x, y) = center_xy
-            day = now.timestamp() / 86400
+            day = now / 86400
             angle = math.radians(360) - math.radians(360) * (float(day % self.orbit_time) / float(self.orbit_time))
             dx = math.sin(angle) * self.distance
             dy = math.cos(angle) * self.distance
@@ -136,7 +136,7 @@ class BurnSequence(Course):
         super().__init__(*args)
 
     def calculate_position(self, universe, body, last_update, now):
-        # TODO
+        # TODO: calculate position based on burn sequence
         return self.body.pos
 
     def view(self, now):
@@ -186,9 +186,10 @@ if __name__ == "__main__":
     heroes = universe.bodies.get("Heroes")
     earth = universe.bodies.get("Earth")
     print(earth.course)
-    now = clock.timestamp
-    print("Earth position:", earth.position)
-    clock.start(datetime.timedelta(days=1), lambda: universe.update())
-    #time.sleep(3)
-    #print("Earth pos +3d: ", earth.position)
-    clock.terminate()
+    print("Earth pos:", earth.position)
+    universe.update()
+    clock.start(86400)
+    print("Sleep 100ms")
+    time.sleep(0.1)
+    universe.update()
+    print("Earth pos:", earth.position)

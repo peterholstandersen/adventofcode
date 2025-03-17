@@ -203,7 +203,7 @@ course e rel (100,100) vel (0,100) 10g
             print(f"Unable to plot course, sorry.")
             return
         (burn_duration, brake_duration, burn, brake) = new_course
-        now = self.universe.clock.timestamp.timestamp()
+        now = self.universe.clock.get_time()
         self.default_craft.course = course.BurnSequence(self.default_craft, [(now, now + burn_duration, burn), (now + burn_duration, now + burn_duration + brake_duration, brake)])
         self.msg = str(self.default_craft.course)
 
@@ -222,34 +222,36 @@ course e rel (100,100) vel (0,100) 10g
 
     def do_tick(self, arg):
         """Usage: tick <seconds>. Jump forward in time. Does not start the universe clock (nor stops it)"""
-        step = safe_float(arg)
-        if step is None:
+        seconds = round(safe_float(arg))
+        if seconds is None or seconds <= 0:
             self.msg = "usage: tick <seconds>"
             self.show = False
             return
-        self.universe.clock.timestamp += datetime.timedelta(seconds=round(step))
+        if self.universe.clock.is_running():
+            self.show = False
+            self.msg = "Cannot use tick while time is running"
+        else:
+            self.universe.clock.tick(seconds)
 
     def do_run(self, arg):
         """Usage: run <seconds>. Start the universe clock in increments of <seconds>"""
         self.show = False
         usage = "usage: run <seconds>"
-        step = safe_float(arg)
-        if step is None:
+        step = round(safe_float(arg))
+        if step is None or step <= 0:
             self.msg = usage
-        elif self.universe.clock.start(datetime.timedelta(seconds=round(step)), lambda: self.view.show(self.universe)):
-            self.msg = "The Universe starts moving" + (". You feel like a God" if randint(1, 100) == 1 else "")
         else:
-            self.msg = f"Internal error: Failed to start clock. clock_thread.is_alive()={self.universe.clock.thread.is_alive()}"
+            self.universe.clock.start(round(step), lambda: self.view.show(self.universe))
+            self.msg = "The Universe starts moving" + (". You feel like a God" if randint(1, 100) == 1 else "")
 
     def do_stop(self, arg):
         """Stop the universe clock"""
         self.show = False
         if len(arg) > 0:
             self.msg = "The 'stop' command does not take any arguments"
-        elif self.universe.clock.stop():
-            self.msg = f"The Universe stops" +  (". You feed like a God" if randint(1, 100) == 1 else "")
         else:
-            self.msg = f"Internal error: Failed to stop clock. clock_thread.is_alive()={self.universe.clock.thread.is_alive()}"
+            self.universe.clock.stop()
+            self.msg = f"The Universe stops" +  (". You feed like a God" if randint(1, 100) == 1 else "")
 
     def do_exit(self, arg):
         """Leave the universe"""
@@ -285,7 +287,7 @@ course e rel (100,100) vel (0,100) 10g
         return line.strip()
 
     def postcmd(self, stop, line):
-        if self.show and is_running_in_terminal() and not self.universe.clock.is_running():
+        if self.show and is_running_in_terminal(): # and not self.universe.clock.is_running():
             self.view.show(self.universe)
         if self.msg:
             print(self.msg)

@@ -1,5 +1,6 @@
 from common import *
 from utils import *
+import time
 import universe as u
 
 def format_time(time, short=True):
@@ -84,10 +85,10 @@ class View:
 
     def _get_text(self, universe):
         out = ""
-        time_text = universe.clock.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        time_text = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime(universe.clock.get_time()))
         center_text = f"Center ({format_distance(self.center[0])}, {format_distance(self.center[1])})" if self.track is None else f"Tracking {self.track}"
         out += f"{time_text}   {center_text}   Scale 1: {format_distance(self.scale)}   Enhance = {self.enhance}\n"
-        f = lambda body: " " + body.course.view(universe.clock.timestamp.timestamp()) if body.course else ""
+        f = lambda body: " " + body.course.view(universe.clock.get_time()) if body.course else ""
         out += "\n".join([f"{body.colour_visual}: {body.name}{f(body)}" for body in universe.bodies.values() if body.visual != "."]) # hack
         return out
 

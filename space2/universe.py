@@ -1,6 +1,6 @@
 from common import *
 from utils import *
-import clock as c
+import clock2 as c
 from course import *
 
 class SpaceObject:
@@ -89,7 +89,7 @@ class Universe:
     def __init__(self, bodies, clock, last_update):
         self.bodies = bodies
         self.clock = clock
-        self._last_update = last_update
+        self._last_update = clock.get_time()
 
     def find_bodies(self, key):
         if key in self.bodies:
@@ -101,12 +101,11 @@ class Universe:
             return self.bodies[name].position
         return None
 
-    def update(self):
-        now = self.clock.timestamp
-        if now <= self._last_update:
-            return
-        [body.update(self._last_update, now) for body in self.bodies.values()]
-        self._last_update = now
+    def update(self, force=False):
+        now = self.clock.get_time()
+        if force or now > self._last_update:
+            [body.update(self._last_update, now) for body in self.bodies.values()]
+            self._last_update = now
 
 # Planet m  Mercury 0.4  LIGHT_RED     88
 # Planet v  Venus   0.7  YELLOW       225
@@ -154,7 +153,7 @@ def create_test_universe(start_thread=False):
     universe = Universe(bodies, clock, last_update)
     for body in bodies.values():
         body.universe = universe
-    universe.update()
+    universe.update(force=True)
     return (universe, clock)
 
 def run_all_tests():
