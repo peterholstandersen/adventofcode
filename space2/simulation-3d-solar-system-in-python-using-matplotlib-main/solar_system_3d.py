@@ -8,7 +8,7 @@ from vectors import Vector
 
 class SolarSystem:
     def __init__(self, size, projection_2d=False):
-        self.size = size
+        self.size = size # 400
         self.projection_2d = projection_2d
         self.bodies = []
 
