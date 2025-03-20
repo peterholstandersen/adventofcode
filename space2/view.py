@@ -110,8 +110,9 @@ class View:
             (c, l) = os.get_terminal_size()
         text = self._get_text(universe)
         l = l - 5 - text.count("\n")
-        visual = self._get_visual(universe, (c, l))
-        out = visual_to_string(visual, (c, l))
+        out = ""
+        # visual = self._get_visual(universe, (c, l))
+        # out += visual_to_string(visual, (c, l))
         out += text
         os.system("clear")
         print(out)

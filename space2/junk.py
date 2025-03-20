@@ -1,3 +1,81 @@
+self.max_x = 0
+self.max_y = 0
+self.max_z = 0
+for body in self.universe.bodies.values():
+    if body.name not in self.to_draw:
+        continue
+    (ux, uy) = body.position
+    (x, y, z) = self.uxyz_to_pxyz((ux, uy, 0))
+    self.max_x = max(self.max_x, abs(x))
+    self.max_y = max(self.max_y, abs(y))
+    self.max_z = max(self.max_z, abs(z))
+print(self.max_x, self.max_y, self.max_z)
+
+random.seed(1000)
+for degree in range(0, 360):
+    (x, y) = (math.sin(math.radians(degree)), math.cos(math.radians(degree)))
+    distance = random.randint(round(2.5 * AU), round(3.2 * AU))
+    (x, y) = (x * distance, y * distance)
+    (x, y, _) = self.uxyz_to_pxyz((x, y, 0))
+    # self.max_x = max(self.max_x, abs(x))
+    # self.max_y = max(self.max_y, abs(y))
+
+
+# print(self.max_x, self.max_y, self.max_z)
+
+
+class PlotView:
+    def __init__(self, universe):
+        self.universe = universe
+        self.bodies = dict()
+        self.height = self.width = 16 # 2048/4*3*self.px
+        self.scale = 10 * AU / self.width
+        for (key, body) in universe.bodies.items():
+            colour = ansi_to_colour.get(body.colour, "white")
+            # body.radius is K km
+            radius = body.radius / 500000
+            if radius < 0.02:
+                radius = 0.02
+            if radius > 0.3:
+                radius = 0.3
+            circle = plt.Circle(self.uxy_to_pxy(body.position), radius, color=colour, clip_on=False)
+            self.bodies[key] = circle
+
+        plt.style.use('dark_background')
+        print(f"scale={self.scale:.0f}  width={self.width}\"  height={self.height}\"")
+        print(f"1 AU = {1 * AU / self.scale}\"")
+
+        # self.fig, self.ax = plt.subplots(figsize=(self.width, self.height), subplot_kw = {"projection": "3d"})
+        self.fig, self.ax = plt.subplots(figsize=(self.width, self.height))
+
+        self.fig.tight_layout()
+        plt.gca().set_aspect('equal')
+        self.ax.set_axis_off()
+        self.ax.margins(x=0.0, y=0.0)
+        self.ax.set_xlim((-self.width / 2, self.width / 2))
+        self.ax.set_ylim((-self.height / 2, self.height / 2))
+
+        for (key, circle) in self.bodies.items():
+            print(key, circle)
+            self.ax.add_patch(circle)
+
+        if is_running_in_terminal():
+            ani = animation.FuncAnimation(fig=self.fig, func=self.update, interval=50, cache_frame_data=False)
+            plt.show()
+
+    def uxy_to_pxy(self, uxy):
+        (ux, uy) = uxy
+        (x, y) = (ux / self.scale + self.width / self.scale, uy / self.scale + self.height / self.scale)
+        return (x, y)
+
+    def update(self, frame):
+        self.universe.update()
+        for (key, circle) in self.bodies.items():
+            body = self.universe.bodies[key]
+            uxy = body.position
+            pxy = self.uxy_to_pxy(uxy)
+            circle.center = pxy
+
 
 
 def foo():

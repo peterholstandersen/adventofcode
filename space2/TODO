@@ -1,5 +1,21 @@
 
 
+
+shadows
+stars
+text below space objects (see iPad)
+crafts
+move view point
+asteroids (orbit)
+moons?
+integrate with command.py
+scale + zoom (+++/---) / enhance
+center, track
+
+use z-plane (pluto, and others?)
+draw furthest away first
+
+
 Make proper startup logic
 not sure if command works together with animation
 how to deal with ascii and plot view. Stop developing on ascii view.
