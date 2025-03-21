@@ -1,3 +1,30 @@
+# Create two 3D polygons
+v1 = np.array([ [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0.5, 0.5, 1] ])
+vertices2 = np.array([
+    [1.5, 1.5, 0],
+    [2.5, 1.5, 0],
+    [2.5, 2.5, 0],
+    [1.5, 2.5, 0],
+    [2, 2, 1]
+])
+faces = np.array([
+    [0, 1, 4],
+    [1, 2, 4],
+    [2, 3, 4],
+    [3, 0, 4],
+    [0, 1, 2]
+])
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=faces, color='r', alpha=0.5)
+ax.plot_trisurf(vertices2[:, 0], vertices2[:, 1], vertices2[:, 2], triangles=faces, color='b', alpha=0.5)
+ax.set_xlabel('X')
+ax.set_ylabel('Y')
+ax.set_zlabel('Z')
+plt.title('Multiple 3D Polygons')
+plt.show()
+
+
 self.max_x = 0
 self.max_y = 0
 self.max_z = 0

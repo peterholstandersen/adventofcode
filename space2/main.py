@@ -9,12 +9,10 @@ def main():
         (universe, clock) = u.create_test_universe(start_thread=False)
         view = v.create_test_view()
         view.show(universe)
-
         command = c.Command(universe, view, universe.bodies.get("Heroes"))
         command_thread = threading.Thread(target=command.cmdloop)
         command_thread.start()
-
-        plot_view = pv.create_plot_view_3d(universe)  # blocks
+        plot_view = pv.create_plot_view_3d(universe, command) # blocks
     finally:
         clock.terminate()
 

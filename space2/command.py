@@ -2,6 +2,7 @@ from common import *
 from utils import *
 import universe as u
 import view as v
+import plot_view as pv
 import course
 
 def interpret_distance(number, prefix, unit):
@@ -28,6 +29,7 @@ class Command(cmd.Cmd):
     default_craft = None
     show = None            # update the view in postcmd
     msg = None             # msg to print after updating the view in postcmd
+    plot_view = None
     _aliases = None
 
     def __init__(self, universe, view, default_craft, *args):
@@ -52,6 +54,8 @@ class Command(cmd.Cmd):
     def _set_scale(self, scale):
         self.view.scale = round(scale)
         self.msg = f"Scale set to {v.format_distance(self.view.scale)}"
+        if self.plot_view:
+            self.plot_view.set_zoom_factor(round(scale / 1000000))
 
     def _complete_names(self, text, line, begidx, endidx):
         last_words = line.partition(' ')[2]     # all words after the first space
@@ -319,15 +323,13 @@ def run_all_tests(command, universe, view):
 if __name__ == '__main__':
     (universe, clock) = u.create_test_universe(start_thread=False)
     view = v.View((0, 0), AU // 10, 1)
-    #do_run(universe, view, 10)
-    #do_stop(universe, view)
     default_craft = universe.bodies.get("Heroes")
     command = Command(universe, view, default_craft)
     if is_running_in_terminal():
         universe.clock.start_thread()
-        # command_thread = threading.Thread(target=command.cmdloop)
-        # command_thread.start()
-        command.cmdloop()
+        command_thread = threading.Thread(target=command.cmdloop)
+        command_thread.start()
+        # command.cmdloop()
         print("done")
     else:
         run_all_tests(command, universe, view)

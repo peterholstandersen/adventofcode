@@ -1,36 +1,26 @@
 
 
-
-shadows
-stars
-text below space objects (see iPad)
-crafts
+integrate with command.py -- make proper startup logic
 move view point
-asteroids (orbit)
-moons?
-integrate with command.py
 scale + zoom (+++/---) / enhance
 center, track
 
-use z-plane (pluto, and others?)
-draw furthest away first
+asteroids
+mercury: eccentric
+pluto: not in the orbital plane
 
+stars
+text below space objects (see iPad)
+crafts
+moons?
 
-Make proper startup logic
-not sure if command works together with animation
-how to deal with ascii and plot view. Stop developing on ascii view.
-
-
-space object colours and sizes
-3d
-textures
 trajectories
 
+how to deal with ascii and plot view. Stop developing on ascii view.
 
 Clean out old clock stuff if new clock is working
 
 Whatca want?
-- wow effect: matplotlib!
 - fiddle around
 - combat
 - for next playsession (what exactly?) -- fly through ring, new systems, dark god interception -- only combat would be needed, but will not repeat that
