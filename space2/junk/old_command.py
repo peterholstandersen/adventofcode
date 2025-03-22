@@ -80,7 +80,7 @@ def do_track(universe, view, ident):
 
 def do_run(universe, view, step):
     step = float(step)
-    if universe.clock.start(datetime.timedelta(seconds=step), lambda : view.show(universe)):
+    if universe.clock.set_factor(datetime.timedelta(seconds=step), lambda : view.show(universe)):
         return "clock started"
     return f"fail to start clock. alive={universe.clock.thread.is_alive()}"
 
@@ -177,7 +177,7 @@ def is_running_in_terminal():
         return True
 
 if __name__ == "__main__":
-    (universe, clock) = u.create_test_universe(start_thread=True)
+    (universe, clock) = u.big_bang(start_thread=True)
     view = v.View((0, 0), AU // 10, 1)
     do_run(universe, view, 10)
     do_stop(universe, view)

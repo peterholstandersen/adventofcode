@@ -1,6 +1,5 @@
 from common import *
 from utils import *
-import time
 import universe as u
 
 def format_time(time, short=True):
@@ -62,16 +61,19 @@ def format_acceleration(acc, as_g=False):
     return number + unit
 
 class View:
-    track = None       # If track is a string, the center is updated to the position of the object before showing
-    center = None      # Coordinates
+    initial_view = None
+    track = None          # If track is a string, the center is updated to the position of the object before showing
+    center = None         # Coordinates
     scale = None
     enhance = None
 
     def __init__(self, center, scale, enhance):
+        self.initial_view = (center, scale, enhance)
+        self.reset_view()
+
+    def reset_view(self):
         self.track = None
-        self.center = center
-        self.scale = scale
-        self.enhance = enhance
+        (self.center, self.scale, self.enhance) = self.initial_view
 
     def _get_visual(self, universe, size_cl):
         offset_cl = (size_cl[0] // 2, size_cl[1] // 2)
@@ -101,14 +103,14 @@ class View:
                 print(f"{self.track} is lost in space, stopped tracking")
                 self.track = None
 
-    def show(self, universe, size_cl=None):
-        universe.update()
-        self.update_center(universe)
+    def show(self, size_cl=None):
+        self.universe.update()
+        self.update_center(self.universe)
         if size_cl:
             (c, l) = size_cl
         else:
             (c, l) = os.get_terminal_size()
-        text = self._get_text(universe)
+        text = self._get_text(self.universe)
         l = l - 5 - text.count("\n")
         out = ""
         # visual = self._get_visual(universe, (c, l))
@@ -176,15 +178,11 @@ def test_format_time():
         ok = verify(format_time(t, short=False), long, silent=True)
         print(" OK" if ok else " ERROR")
 
-def create_test_view():
-    return View((0, 0), 0.3 * AU, 4)
-
 def run_all_tests():
     test_format_acceleration()
     test_format_time()
-    (universe, clock) = u.create_test_universe()
-    view = create_test_view()
-    view.show(universe, (80, 8))
+    universe = u.big_bang()
+    universe.view.show((80, 8))
 
 if __name__ == "__main__":
     run_all_tests()

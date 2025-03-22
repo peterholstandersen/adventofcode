@@ -1,7 +1,10 @@
 from common import *
 from utils import *
 import clock2 as c
-from course import *
+import view as v
+import plot_view as pv
+import command as cmd
+from course import Orbit
 
 class SpaceObject:
     universe = None
@@ -83,14 +86,29 @@ class Ring(SpaceObject):
         return visual
 
 class Universe:
+    alive = True
     bodies = None
     clock = None
+    view = None
+    plot_view = None
+    command = None
     _last_update = None
 
-    def __init__(self, bodies, clock, last_update):
+    def __init__(self, bodies, clock, view, plot_view, command):
+        self.alive = True
         self.bodies = bodies
         self.clock = clock
-        self._last_update = clock.get_time()
+        self.view = view
+        self.plot_view = plot_view
+        self.command = command
+        self._last_update = None
+        self.clock.universe = self
+        self.view.universe = self
+        self.plot_view.universe = self
+        self.command.universe = self
+        for body in bodies.values():
+            body.universe = self
+        self.update(force=True)
 
     def find_bodies(self, key):
         if key in self.bodies:
@@ -104,20 +122,12 @@ class Universe:
 
     def update(self, force=False):
         now = self.clock.get_time()
-        if force or now > self._last_update:
+        if force or self._last_update is None or now > self._last_update:
             [body.update(self._last_update, now) for body in self.bodies.values()]
             self._last_update = now
 
-# Planet m  Mercury 0.4  LIGHT_RED     88
-# Planet v  Venus   0.7  YELLOW       225
-# Planet e  Earth   1.0  LIGHT_BLUE   365
-# Planet M  Mars    1.5  RED          687
-# Planet c  Ceres   2.8  DARK_GRAY   1682
-# Planet J  Jupiter 5.2  YELLOW      4333
-# Planet S  Saturn  9.6  YELLOW     10759  ?
-# Planet U  Uranus 19.2  LIGHT_CYAN 30687
-# Planet N  Neptune 30.0 LIGHT_BLUE 60190
-# Planet p  Pluto   39.5 DARK_GRAY  90560  #f6ddbd ?
+    def die(self):
+        self.alive = False
 
 # Saturn 58.000 km radius
 #
@@ -128,9 +138,7 @@ class Universe:
 # B ring: 92,000 - 117,580, 5-15m   # The B Ring is the largest, brightest, and most massive of the rings. Its thickness is estimated as 5 to 15 m.
 # A ring: 122,170 - 136,775, 10-30m # The A Ring is the outermost of the large, bright rings.
 
-def create_test_universe(start_thread=False):
-    last_update = datetime.datetime(2030, 8, 20, 16, 49, 7, 652303)
-    clock = c.make_clock(last_update + datetime.timedelta(1), start_thread=start_thread)
+def create_bodies():
     bodies = dict()
     bodies["Sun"] = SpaceObject("Sun",         ( 0, 0),        YELLOW,     "#f29f05", "*", 696340, "star_sun.png", None)
     bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0), DARK_GRAY,  "#d1cfc8", "m",   2440, "...", Orbit("Sun",  0.4 * AU,    88))
@@ -143,25 +151,32 @@ def create_test_universe(start_thread=False):
     bodies["Uranus"] =  SpaceObject("Uranus",  (19.2 * AU, 0), LIGHT_CYAN, "#bbe1e4", "U",  15800, "...", Orbit("Sun", 19.2 * AU, 30687))
     bodies["Neptun"] =  SpaceObject("Neptun",  (30.0 * AU, 0), LIGHT_BLUE, "#3d5ef9", "N",  15300, "...", Orbit("Sun", 30.0 * AU, 60190))
     bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0), DARK_GRAY,  "#ddc4af", "p",   2400, "...", Orbit("Sun", 39.5 * AU, 90560))
-    # dont enhance!
+    bodies["Heroes"] = SpaceObject("Heroes", (0.3 * AU, 0), LIGHT_WHITE, "#eeeeee", "x", 0.040, "...", None)
     #bodies["Asteroid Belt"] = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
     #bodies["C ring"] = Ring(75000, 85000, 1,   "C ring",   (0, 0),    LIGHT_GRAY,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     #bodies["B ring"] = Ring(92000, 115000, 1,  "B ring",   (0, 0),    FAINT + BROWN,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     #bodies["A ring"] = Ring(120000, 136000, 1, "A ring",   (0, 0),    YELLOW,  ".", None, "...", "Sun", 9.6 * AU, 10759)
     #bodies["Sol Gate"] = SpaceObject("Sol Gate", (21.2 * AU, 0), LIGHT_CYAN, "o", 1000, "...", None, None, None)
-    bodies["Heroes"] = SpaceObject("Heroes", (0.3 * AU, 0), LIGHT_WHITE, "#eeeeee", "x", 0.040, "...", None)
+    return bodies
 
-    universe = Universe(bodies, clock, last_update)
-    for body in bodies.values():
-        body.universe = universe
-    universe.update(force=True)
-    return (universe, clock)
+def big_bang():
+    clock = c.Clock2(datetime.datetime(2030, 8, 20, 16, 49, 7, 652303).timestamp())
+    plot_view = pv.PlotView3D()
+    view = v.View((0, 0), plot_view.scale, 4)
+    command = cmd.Command("x")
+    bodies = create_bodies()
+    universe = Universe(bodies, clock, view, plot_view, command)
+    return universe
 
 def run_all_tests():
-    (universe, clock) = create_test_universe()
-    print(clock)
+    universe = big_bang()
+    print("No Nones please")
     print(universe)
-    print(universe.bodies["Earth"].position)
+    print(universe.clock, universe.clock.universe, universe.clock.get_time())
+    print(universe.view, universe.view.universe)
+    print(universe.plot_view, universe.plot_view.universe)
+    print(universe.command, universe.command.universe)
+    print("Earth position:", universe.bodies["Earth"].position)
 
 if __name__ == "__main__":
     run_all_tests()

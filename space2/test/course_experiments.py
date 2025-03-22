@@ -374,7 +374,7 @@ def test_it():
     print(course)
 
 if __name__ == "__main__":
-    (universe, clock) = u.create_test_universe(start_thread=False)
+    (universe, clock) = u.big_bang(start_thread=False)
     universe.update()
     heroes = universe.bodies.get("Heroes")
     heroes.course = Target(heroes, (0, 0), 9.81)
@@ -387,6 +387,6 @@ if __name__ == "__main__":
     print("Earth position:", earth.position)
     earth.update(0, now)
     print("Earth position:", earth.position)
-    clock.start(datetime.timedelta(days=1), lambda: universe.update())
+    clock.set_factor(datetime.timedelta(days=1), lambda: universe.update())
     time.sleep(3)
     clock.terminate()

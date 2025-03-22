@@ -25,18 +25,14 @@ REL_POS = rf"(?:{REL_POS1}|{REL_POS2})"
 
 class Command(cmd.Cmd):
     universe = None
-    view = None
-    default_craft = None
+    default_craft_name = None
     show = None            # update the view in postcmd
     msg = None             # msg to print after updating the view in postcmd
-    plot_view = None
     _aliases = None
 
-    def __init__(self, universe, view, default_craft, *args):
+    def __init__(self, default_craft_name, *args):
         super().__init__(*args)
-        self.universe = universe
-        self.view = view
-        self.default_craft = default_craft
+        self.default_craft_name = default_craft_name
         self._init_aliases()
 
     def _init_aliases(self):
@@ -52,10 +48,10 @@ class Command(cmd.Cmd):
 
     # Helper functions
     def _set_scale(self, scale):
-        self.view.scale = round(scale)
-        self.msg = f"Scale set to {v.format_distance(self.view.scale)}"
-        if self.plot_view:
-            self.plot_view.set_zoom_factor(round(scale / 1000000))
+        self.universe.view.scale = round(scale)
+        self.msg = f"Scale set to {v.format_distance(self.universe.view.scale)}"
+        if self.universe.plot_view:
+            self.universe.plot_view.set_scale(scale)
 
     def _complete_names(self, text, line, begidx, endidx):
         last_words = line.partition(' ')[2]     # all words after the first space
@@ -66,7 +62,6 @@ class Command(cmd.Cmd):
         candidates = self.universe.find_bodies(arg)
         if len(candidates) == 0:
             self.msg = f"Cannot find {arg}."
-            return None
         elif len(candidates) == 1:
             return candidates[0]
         else:
@@ -77,7 +72,7 @@ class Command(cmd.Cmd):
                 text = ("".join(names[:-1])) + "or " + candidates[-1].name
             self.msg = "Did you mean " + text + "?"
             self.show = False
-            return None
+        return None
 
     def _parse_position(self, arg, usage):
         # ident, x, and y specifies the absolute position
@@ -111,9 +106,8 @@ class Command(cmd.Cmd):
 
     def do_reset(self, arg):
         """Reset view"""
-        self.view.center = (0, 0)
-        self.view.scale = 0.3 * AU
-        self.view.enhance = 4
+        self.universe.view.reset_view()
+        self.universe.plot_view.reset_view()
 
     def do_scale(self, arg):
         """Scale the view. Usage: scale <positive number>."""
@@ -130,9 +124,11 @@ For example, 'zoom +++'. The keyword 'zoom' may be omitted, e.g., '++++' has the
         """
         if len(arg) > 0 and (all([char == "+" for char in arg]) or all([char == "-" for char in arg])):
             n = len(arg)
-            factor = max(50 - n * 10, 10) / 100
-            factor = pow(factor, n)
-            scale = self.view.scale * factor if arg[0] == "+" else self.view.scale / factor
+            # 40%, 30%, 20%, 10%
+            factor = max(70 - n * 10, 10) / 100
+            if n > 7:
+                factor = pow(factor, n - 6)
+            scale = self.universe.view.scale * factor if arg[0] == "+" else self.universe.view.scale / factor
             self._set_scale(max(scale, 1))
         else:
             self.msg = f"usage: zoom followed by any number of plusses (+) or minusses (-). For example, zoom +++"
@@ -143,8 +139,8 @@ For example, 'zoom +++'. The keyword 'zoom' may be omitted, e.g., '++++' has the
         if n is None or n <= 0:
             self.msg = self.do_enhance.__doc__
         else:
-            self.view.enhance = round(n)
-            self.msg = f"Enhancement set to {self.view.enhance}"
+            self.universe.view.enhance = round(n)
+            self.msg = f"Enhancement set to {self.universe.view.enhance}"
 
     def do_center(self, arg):
         """
@@ -167,9 +163,9 @@ Examples:
         xy = self._parse_position(arg, usage)
         if xy is None:
             return
-        self.view.track = None
-        self.view.center = xy
-        self.msg = f"Center set to ({v.format_distance(self.view.center[0])}, {v.format_distance(self.view.center[1])})"
+        self.universe.view.track = None
+        self.universe.view.center = xy
+        self.msg = f"Center set to ({v.format_distance(xy[0])}, {v.format_distance(xy[1])})"
 
     def do_course(self, arg):
         """
@@ -185,8 +181,11 @@ course e rel (100,100) velocity (0,100) max 10g
 course e rel (100,100) vel (0,100) 10g
         """
         self.show = False
-        if self.default_craft is None:
+        if self.default_craft_name is None:
             self.msg = "Default craft is not set"
+            return
+        default_craft = self._get_body(self.default_craft_name)
+        if not default_craft:
             return
         usage = "course <absolute_pos> [ rel <realative_pos> ] [vel[ocity] <vector>] [max] [Ng]"
         if len(arg) == 0:
@@ -195,8 +194,8 @@ course e rel (100,100) vel (0,100) 10g
         end_pos = self._parse_position(arg, "Unable to determine target position. Usage: " + usage)
         if not end_pos:
             return
-        start_pos = self.default_craft.position
-        start_velocity = self.default_craft.velocity
+        start_pos = default_craft.position
+        start_velocity = default_craft.velocity
         match = re.match(rf".*vel.*\s+{COORDS}.*", arg)
         end_velocity = (float(match.group(1)), float(match.group(2))) if match else (0, 0)
         match = re.match(r".*([0-9]+)\s*g.*", arg)
@@ -208,7 +207,7 @@ course e rel (100,100) vel (0,100) 10g
             return
         (burn_duration, brake_duration, burn, brake) = new_course
         now = self.universe.clock.get_time()
-        self.default_craft.course = course.BurnSequence(self.default_craft, [(now, now + burn_duration, burn), (now + burn_duration, now + burn_duration + brake_duration, brake)])
+        self.default_craft.course = course.BurnSequence(default_craft, [(now, now + burn_duration, burn), (now + burn_duration, now + burn_duration + brake_duration, brake)])
         self.msg = str(self.default_craft.course)
 
     def do_track(self, arg):
@@ -220,8 +219,8 @@ course e rel (100,100) vel (0,100) 10g
             return
         body = self._get_body(arg)
         if body:
-            self.view.track = body.name
-            self.view.update_center(self.universe)
+            self.universe.view.track = body.name
+            self.universe.view.update_center(self.universe)
             self.msg = f"Tracking {self.view.track}"
 
     def do_tick(self, arg):
@@ -245,7 +244,7 @@ course e rel (100,100) vel (0,100) 10g
         if step is None or step <= 0:
             self.msg = usage
         else:
-            self.universe.clock.start(round(step), lambda: self.view.show(self.universe))
+            self.universe.clock.set_factor(round(step))
             self.msg = "The Universe starts moving" + (". You feel like a God" if randint(1, 100) == 1 else "")
 
     def do_stop(self, arg):
@@ -261,6 +260,7 @@ course e rel (100,100) vel (0,100) 10g
         """Leave the universe"""
         self.show = False
         self.msg = "You escape the Universe"
+        self.universe.die()
         return True
 
     def do_help(self, arg):
@@ -292,21 +292,23 @@ course e rel (100,100) vel (0,100) 10g
 
     def postcmd(self, stop, line):
         if self.show and is_running_in_terminal(): # and not self.universe.clock.is_running():
-            self.view.show(self.universe)
+            self.universe.view.show()
         if self.msg:
             print(self.msg)
         return stop
 
 # ==================================================================================================
 
-def test_onecmd(commmand, line):
+def test_onecmd(command, line):
     quoted_line = "'" + line + "'"
     print(f"onecmd {quoted_line:<30} # ", end="")
     line = command.precmd(line)
     stop = command.onecmd(line)
     command.postcmd(stop, line)
 
-def run_all_tests(command, universe, view):
+def run_all_tests1(universe):
+    command = universe.command
+    view = universe.view
     to_test = [
         ("zoom", ["+", "-", "++++", "----", ""]),
         ("scale", ["1", "2", "1.1", "1 2", "", ".", "  1  ", "-1"]),
@@ -320,18 +322,17 @@ def run_all_tests(command, universe, view):
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]
     [ test_onecmd(command, text) for text in cmds ]
 
-if __name__ == '__main__':
-    (universe, clock) = u.create_test_universe(start_thread=False)
-    view = v.View((0, 0), AU // 10, 1)
-    default_craft = universe.bodies.get("Heroes")
-    command = Command(universe, view, default_craft)
+def run_all_tests():
+    universe = u.big_bang()
+    command = universe.command
     if is_running_in_terminal():
-        universe.clock.start_thread()
-        command_thread = threading.Thread(target=command.cmdloop)
-        command_thread.start()
-        # command.cmdloop()
+        #command_thread = threading.Thread(target=command.cmdloop)
+        #command_thread.start()
+        command.cmdloop()
         print("done")
     else:
-        run_all_tests(command, universe, view)
-    clock.terminate()
+        run_all_tests1(universe)
     print("bye bye")
+
+if __name__ == '__main__':
+    run_all_tests()

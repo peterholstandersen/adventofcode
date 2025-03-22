@@ -1,22 +1,19 @@
 
 
-integrate with command.py -- make proper startup logic
 move view point
-scale + zoom (+++/---) / enhance
+enhance
 center, track
 
 asteroids
 mercury: eccentric
 pluto: not in the orbital plane
 
-stars
 text below space objects (see iPad)
 crafts
 moons?
 
 trajectories
 
-how to deal with ascii and plot view. Stop developing on ascii view.
 
 Clean out old clock stuff if new clock is working
 
@@ -36,6 +33,8 @@ Course 1.0
 - Set course display text (i.e., course * or course * rel ... or course (0,0))
 - On update time: update position in BurnSequence
 - handle sx <= 0
+
+big_bang defaults (time, heroes, space bodies, view params) should not be in universe
 
 Tech dept
 - animation should probably be paused when clock is not running ?

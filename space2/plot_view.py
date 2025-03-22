@@ -8,33 +8,32 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import math
-
 import matplotlib.tri as tri
 
 class PlotView3D:
-    def __init__(self, universe, command):
-        if command:
-            command.plot_view = self
+    universe = None
+    animation = None
+    scale = None
+    width = None
+    height = None
+    depth = None
+
+    def __init__(self):
         self.focal_length = 0.3
         self.elev = 20
         self.azim = 45
-        self.universe = universe
         self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), subplot_kw={"projection": "3d"})
         self.fig.tight_layout()
         self.ax.set_proj_type('persp', focal_length=self.focal_length)
         self.fig.set_facecolor('black')
         self.ax.set_facecolor('black')
-        self.ax.grid(False)
         self.ax.xaxis.set_pane_color("black")
         self.ax.yaxis.set_pane_color("black")
         self.ax.zaxis.set_pane_color("black")
         self.ax.view_init(elev=self.elev, azim=self.azim)
-        self.scale = None
-        self.width = None
-        self.height = None
-        self.depth = None
         self.set_scale(3 * AU)
-        self.draw_bodies()
+
+    def start_animation(self):
         self.animation = animation.FuncAnimation(fig=self.fig, func=self.update_all, interval=500, cache_frame_data=False)
         plt.show()
 
@@ -77,7 +76,6 @@ class PlotView3D:
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=front, color='#909090', alpha=1)
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=body, color='#808080', alpha=1)
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=aft, color='#fc272f', alpha=1)
-
 
     def draw_bodies(self, frame=0):
         plt.cla()
@@ -141,20 +139,19 @@ class PlotView3D:
 
         self.ax.set_aspect('equal')
 
-
     def update_all(self, frame):
+        if not self.universe.alive:
+            print("The Universe is no more")
+            sys.exit()
         self.universe.update()
         self.draw_bodies(frame)
 
 # ==================================
 
-def create_plot_view_3d(universe, command):
-    return PlotView3D(universe, command)
-
-def test_plot_view_3d():
-    (universe, clock) = u.create_test_universe(start_thread=False)
-    clock.start(86400 // 5)
-    x = create_plot_view_3d(universe, None)
+def test_plot_view():
+    universe = u.big_bang()
+    universe.clock.set_factor(86400 // 5)
+    universe.plot_view.start_animation()
 
 if __name__ == "__main__":
-    test_plot_view_3d()
+    test_plot_view()
