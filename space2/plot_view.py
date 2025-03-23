@@ -3,7 +3,8 @@ from utils import *
 import universe as u
 import sys
 import itertools
-from matplotlib.colors import LightSource
+import matplotlib
+from matplotlib.colors import LightSource, ListedColormap
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,15 +14,17 @@ import matplotlib.tri as tri
 class PlotView3D:
     universe = None
     animation = None
+    focal_length = 0.3
+    elev = 20
+    azim = 45
     scale = None
     width = None
     height = None
     depth = None
+    center = (0, 0, 0)
+    track = None
 
     def __init__(self):
-        self.focal_length = 0.3
-        self.elev = 20
-        self.azim = 45
         self.fig, self.ax = plt.subplots(1, 1, figsize=(16, 16), subplot_kw={"projection": "3d"})
         self.fig.tight_layout()
         self.ax.set_proj_type('persp', focal_length=self.focal_length)
@@ -30,8 +33,9 @@ class PlotView3D:
         self.ax.xaxis.set_pane_color("black")
         self.ax.yaxis.set_pane_color("black")
         self.ax.zaxis.set_pane_color("black")
-        self.ax.view_init(elev=self.elev, azim=self.azim)
         self.set_scale(3 * AU)
+        viridis_big = matplotlib.colormaps['viridis']
+        self.uranus_colour_map = ListedColormap(viridis_big(np.linspace(0.25, 0.75, 128)))
 
     def start_animation(self):
         self.animation = animation.FuncAnimation(fig=self.fig, func=self.update_all, interval=500, cache_frame_data=False)
@@ -42,10 +46,35 @@ class PlotView3D:
         self.width = self.scale
         self.height = self.scale
         self.depth = self.scale // 2
-        self.ax.set_xlim((-self.width / 2, self.width / 2))
-        self.ax.set_ylim((-self.height / 2, self.height / 2))
-        self.ax.set_zlim((-self.depth / 2, self.depth / 2))
+        self.update_center()
+        self.ax.set_xlim((-self.width  // 2 + self.center[0], self.width  // 2 + self.center[0]))
+        self.ax.set_ylim((-self.height // 2 + self.center[1], self.height // 2 + self.center[1]))
+        self.ax.set_zlim((-self.depth  // 2 + self.center[2], self.depth  // 2 + self.center[2]))
         self.ax.grid(False)
+
+    def update_center(self):
+        if self.track:
+            body = self.universe.bodies.get(self.track, None)
+            if body:
+                self.center = body.position
+            else:
+                print(f"{self.track} is lost in space, stopped tracking")
+                self.track = None
+
+    def reset_view(self):
+        self.set_scale(3 * AU)
+        self.center = (0, 0, 0)
+        self.track = None
+        self.ax.view_init(elev=20, azim=45)
+
+    def adjust_view_point(self, azim, elev):
+        new_azim = self.ax.azim + azim
+        new_elev = self.ax.elev + elev
+        new_azim = min(new_azim, 90)
+        new_azim = max(new_azim, -90)
+        new_elev = new_elev % 360
+        self.ax.view_init(elev=new_elev, azim=new_azim)
+        # self.draw_bodies()
 
     def plot_craft(self, pos, size):
         x = np.array([1, 0, 0])
@@ -79,14 +108,19 @@ class PlotView3D:
 
     def draw_bodies(self, frame=0):
         plt.cla()
-        self.ax.grid(False)
-        for (sx, sy, sz) in itertools.product([-1,1], [-1,1], [-1,1]):
-            self.ax.plot(sx * self.width / 2, sy * self.height / 2, sz * self.depth / 2, marker="o", markersize=1, color="#000000")
+        self.set_scale(self.scale)
+        (min_x, max_x) = self.ax.get_xlim()
+        (min_y, max_y) = self.ax.get_ylim()
+        (min_z, max_z) = self.ax.get_zlim()
+        #for (x, y, z) in [ (min_x, min_y, min_z), (max_x, max_y, max_z) ]:
+        #    self.ax.plot(x, y, z, marker="o", markersize=1, color="#000000")
 
         for body in self.universe.bodies.values():
-            (x, y) = body.position
-            z = 0
-            if abs(x) <= self.width / 2 and abs(y) <= self.height / 2 and abs(z) <= self.depth / 2:
+            if len(body.position) != 3:
+                print(body.name, body.position)
+                sys.exit()
+            (x, y, z) = body.position
+            if min_x <= x <= max_x and min_y <= y <= max_y and min_z <= z <= max_z:
                 if x == 0 and y == 0:
                     shade = False
                     ls = None
@@ -110,9 +144,13 @@ class PlotView3D:
                     # print("Heroes at", x, y, z, size)
                     self.plot_craft((x, y, z), size=size)
                     continue
-                resolution = round(size/self.scale * 1000)
-                if resolution > 120:
-                    resolution = 120
+                colour_map = None
+                if body.name == "Uranus":
+                    colour_map = self.uranus_colour_map
+                max_resolution = 1024 if colour_map else 128
+                resolution = round(size/self.scale * 1000) * (4 if colour_map else 1)
+                if resolution > max_resolution:
+                    resolution = max_resolution
                 elif resolution < 20:
                     resolution = 20
                 # print(f"{body.name:<10}  {body.radius:>8} km  size: {size:.1f}   size/scale: {size/self.scale:.3f}   resolution={resolution}")
@@ -121,7 +159,7 @@ class PlotView3D:
                 x = size * np.outer(np.cos(u), np.sin(v)) + x
                 y = size * np.outer(np.sin(u), np.sin(v)) + y
                 z = size * np.outer(np.ones(np.size(u)), np.cos(v)) + z
-                self.ax.plot_surface(x, y, z, color=body.rgb_colour, linewidth=0, antialiased=False, lightsource=ls, shade=shade)
+                self.ax.plot_surface(x, y, z, color=body.rgb_colour, linewidth=0, antialiased=False, lightsource=ls, shade=shade, cmap=colour_map)
 
         self.ax.set_aspect('equal')
         return

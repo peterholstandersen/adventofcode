@@ -88,17 +88,19 @@ class Command(cmd.Cmd):
             return None
         ident = match.group(1)
         (x, y, dx, dy, degrees, dist) = tuple(map(safe_float, match.groups()[1:]))
+        z = 0
+        dx = 0
         if ident is not None:
             body = self._get_body(ident)
             if not body:
                 return None
-            (x ,y) = body.position
+            (x, y, z) = body.position
         if dx and dy:
-            (x, y) = (x + dx, y + dy)
+            (x, y, z) = (x + dx, y + dy, z + dz)
         elif degrees and dist:
             x += sin(radians(degrees)) * dist
             y += cos(radians(degrees)) * dist
-        return (round(x), round(y))
+        return (round(x), round(y), z)
 
     # cmd module functions for tab-completion of space object names in command arguments
     complete_center = _complete_names
@@ -165,7 +167,25 @@ Examples:
             return
         self.universe.view.track = None
         self.universe.view.center = xy
+        self.universe.plot_view.track = None
+        self.universe.plot_view.center = (xy[0], xy[1], 0)
         self.msg = f"Center set to ({v.format_distance(xy[0])}, {v.format_distance(xy[1])})"
+
+    def do_up(self, arg):
+        self.universe.plot_view.adjust_view_point(0, 1)
+        self.msg = "Moving viewing point up"
+
+    def do_down(self, arg):
+        self.universe.plot_view.adjust_view_point(0, -10)
+        self.msg = "Moving viewing point down"
+
+    def do_left(self, arg):
+        self.universe.plot_view.adjust_view_point(-10, 0)
+        self.msg = "Moving viewpoint left"
+
+    def do_right(self, arg):
+        self.universe.plot_view.adjust_view_point(10, 0)
+        self.msg = "Moving viewpoint right"
 
     def do_course(self, arg):
         """
@@ -221,7 +241,9 @@ course e rel (100,100) vel (0,100) 10g
         if body:
             self.universe.view.track = body.name
             self.universe.view.update_center(self.universe)
-            self.msg = f"Tracking {self.view.track}"
+            self.universe.plot_view.track = body.name
+            self.universe.plot_view.update_center()
+            self.msg = f"Tracking {self.universe.plot_view.track}"
 
     def do_tick(self, arg):
         """Usage: tick <seconds>. Jump forward in time. Does not start the universe clock (nor stops it)"""

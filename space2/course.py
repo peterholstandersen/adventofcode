@@ -103,18 +103,17 @@ class Orbit(Course):
         super().__init__(*args)
 
     def calculate_position(self, universe, _, __, now):
-        # print("Updating", self.__str__())
-        center_xy = universe.get_body_position(self.center)
-        if center_xy is None:
+        center_xyz = universe.get_body_position(self.center)
+        if center_xyz is None:
             print(f"{self.center} is lost in space.")
             return None
         else:
-            (x, y) = center_xy
-            day = now / 86400
+            (x, y, z) = center_xyz
+            day = (now + hash(self)) / 86400
             angle = math.radians(360) - math.radians(360) * (float(day % self.orbit_time) / float(self.orbit_time))
             dx = math.sin(angle) * self.distance
             dy = math.cos(angle) * self.distance
-            return (x + dx, y + dy)
+            return (x + dx, y + dy, z)
 
     def view(self, now=0):
         return ""
@@ -181,14 +180,14 @@ if __name__ == "__main__":
     print(burn_sequence.view(500000))
     print(burn_sequence.view(1900000))
     # print(doit(start_point=(0,0), end_point=(1000, 100), start_velocity=(0,0), end_velocity=(0, 100), max_acc=10))
-    (universe, clock) = u.big_bang(start_thread=False)
+    universe = u.big_bang()
     universe.update()
     heroes = universe.bodies.get("Heroes")
     earth = universe.bodies.get("Earth")
     print(earth.course)
     print("Earth pos:", earth.position)
     universe.update()
-    clock.set_factor(86400)
+    universe.clock.set_factor(86400)
     print("Sleep 100ms")
     time.sleep(0.1)
     universe.update()

@@ -1,10 +1,14 @@
 
+gate
+ring space
+ilus system
+dark gods
 
-move view point
+zoom by mouse
+
 enhance
-center, track
 
-asteroids
+tactical view
 mercury: eccentric
 pluto: not in the orbital plane
 
@@ -14,13 +18,12 @@ moons?
 
 trajectories
 
-
-Clean out old clock stuff if new clock is working
-
 Whatca want?
-- fiddle around
+- fly A to B
 - combat
 - for next playsession (what exactly?) -- fly through ring, new systems, dark god interception -- only combat would be needed, but will not repeat that
+
+asteroids
 
 Fiddle
 - center (0,0) => Sun
@@ -34,10 +37,13 @@ Course 1.0
 - On update time: update position in BurnSequence
 - handle sx <= 0
 
-big_bang defaults (time, heroes, space bodies, view params) should not be in universe
-
 Tech dept
+- clean out old clock stuff if new clock is working
 - animation should probably be paused when clock is not running ?
+- orbit starting position -- now hash(self)
+- colour maps
+- big_bang defaults (time, heroes, space bodies, view params) should not be in universe
+- view default: remove magic constants
 ===================================================================================
 multiple systems / travel through gate
 Point of interest
@@ -46,7 +52,6 @@ view <spaceobject> command => open image file
 interception course: craft/weapons towards (moving) targets, max_g
 Intercept cancelled if object suddenly is out of reach.
 try to intercept slower speed
-spaceobject view order
 when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
 - planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
 lock everything on command, lock everything on update ???
@@ -57,7 +62,6 @@ missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are re
 you can remove multiple missile by "00*". In general, the remove command takes multiple arguments (rm is also remove)
 lay out torpedoes and send them off later, torps & missiles can also be sent after other targets (and possibly not detonate)
 --------------------------------------
-dont enhance belt (hacked for now). What is the logic here?
 Ilus system
 use # or . for ring zone ... how to handle 1377 gates ... when do not draw them all, just representatives
 cmd full_stop: an object to a full stop (vel=0, acc=0, course cancelled)
@@ -65,16 +69,14 @@ cmd Reset ID: reread from file
 disable superuser commands when in user mode
 slow zone
 max speed
-output back to client
 combat stuff made easy
 flag: save world on exit (or error), save frequence
 flag: restore world from newest file on startup
 SpaceObject:
 viewing options
-pseudo 3d
 --------------------------------------------------------------------------------------------------
 listen for event on resize window? and update view
 "run" and "tick" should accept other than "seconds" as argument
 Jupiter moons
-objects with texture (Jupiter) ... ASCII art
+objects with texture (Jupiter)
 gravity
