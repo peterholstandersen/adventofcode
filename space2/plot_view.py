@@ -112,88 +112,6 @@ class PlotView3D:
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=body, color='#808080', alpha=1)
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=aft, color='#fc272f', alpha=1)
 
-
-    def plot_mercury_trajectory(self):
-        resolution = 100
-        x = 9228
-        for d in np.linspace(x, x + 88, resolution):
-            self.plot_mercury_trajectory_one(d)
-
-
-    def plot_mercury_trajectory_one(self, d):
-        sin = math.sin
-        cos = math.cos
-        atan2 = math.atan2
-
-        # https://stjarnhimlen.se/comp/tutorial.html
-
-        # perihelion: point closest to the sun
-
-        # To describe the position in the orbit, we use three angles: Mean Anomaly, True Anomaly, and Eccentric Anomaly.
-        # They are all zero when the planet is in perihelion:
-        # Mean Anomaly (M): This angle increases uniformly over time, by 360 degrees per orbital period.
-        # It's zero at perihelion. It's easily computed from the orbital period and the time since last perihelion.
-        #
-        # True Anomaly (v): This is the actual angle between the planet and the perihelion, as seen from the central
-        # body (in this case the Sun). It increases non-uniformly with time, changing most rapidly at perihelion.
-        #
-        # Eccentric Anomaly (E): This is an auxiliary angle used in Kepler's Equation, when computing the True Anomaly
-        # from the Mean Anomaly and the orbital eccentricity.
-        # Note that for a circular orbit (eccentricity=0), these three angles are all equal to each other.
-
-        # day number
-        # d = 367 * y - 7 * (y + (m + 9) // 12) // 4 - 3 * ((y + (m - 9) // 7) / 100 + 1) // 4 + 275 * m // 9 + D - 730515
-        # d = d + hour / 24.0
-
-        # Orbital elements for Mercury
-        N = math.radians(48.3313 + 3.24587E-05 * d)   # Longtitude of ascending node
-        i = math.radians( 7.0047 + 5.00E-08    * d)   # Inclination
-        w = math.radians(29.1241 + 1.01444E-05 * d)   # Argument of perihelion
-        a = 0.387098 * AU                             # Semi-major axis (or mean distance from Sun)
-        e = 0.205635 + 5.59E-10 * d                   # Eccentricity
-        M = math.radians(168.6562 + 4.0923344368 * d) # Mean anomaly (0 at perihelion; increases uniformly with time)
-
-        # M, e, a, N, w, i
-
-        # Now we must solve Kepler's equation M = e * sin(E) - E, where we know M, the mean anomaly, and the e the
-        # eccentricity, and we want to find E, the eccentricity anomaly. We start by computing a first approximation
-        # of E:
-
-        E0 = M + e * sin(M) * (1.0 * e * sin(M))
-
-        count = 0
-        while True:
-            count += 1
-            if count > 1000000:
-                print("Kepler's equation does not converge. Eccentricity is probably close to one:", e)
-                sys.exit(1)
-            E1 = E0 - (E0 - e * sin(E0) - M) / (1 - e * cos(E0))
-            if abs(E1 - E0) < math.radians(1E-05):
-                break
-            E0 = E1
-        E = E1
-
-        # The planet's distance and true anomaly
-        xv = a * (cos(E) - e)
-        yv = a * math.sqrt(1.0 - e**2) * sin(E)
-        v = atan2(yv, xv)
-        r = math.sqrt(xv**2 + yv**2)
-
-        # The planet's position in 3d space
-        xh = r * (cos(N) * cos(v + w) - sin(N) * sin(v + w) * cos(i))
-        yh = r * (sin(N) * cos(v + w) + cos(N) * sin(v + w) * cos(i))
-        zh = r * (sin(v + w) * sin(i))
-
-        r_check = sqrt(xh * xh + yh * yh + zh * zh) # must equal r except for rounding errors
-        if abs(r - r_check) > 0.001:
-            print("must be (nearly) equal", r, r_check, abs(r - r_check))
-            sys.exit()
-
-        # print(xh, yh, zh)
-
-        self.ax.plot(xh, yh, zh, marker="o", markersize=1, color="#ffffff")
-
-
     def draw_bodies(self, frame=0):
         plt.cla()
         self.set_scale(self.scale)
@@ -202,8 +120,6 @@ class PlotView3D:
         (min_z, max_z) = self.ax.get_zlim()
         #for (x, y, z) in [ (min_x, min_y, min_z), (max_x, max_y, max_z) ]:
         #    self.ax.plot(x, y, z, marker="o", markersize=1, color="#000000")
-
-        self.plot_mercury_trajectory()
 
         for body in self.universe.bodies.values():
             if len(body.position) != 3:
@@ -226,8 +142,8 @@ class PlotView3D:
                     xy = math.sqrt(x ** 2 + y ** 2)
                     altdeg = math.degrees(math.atan(-z / xy)) if xy != 0 else (-90 if z > 0 else 90)
                     ls = LightSource(azdeg=degrees, altdeg=altdeg)
-                # enhance: 0.05: tiny, 0.1: small, 0.2: medium-large, 0.3: large, 0.4: very large
-                size = body.radius ** 0.22 * 1_000_000
+                # The larger the exponent, the bigger the difference
+                size = body.radius ** 0.3 * 250_000
                 if size > 40_000_000:
                     size = 40_000_000
                 if body.name == "Heroes":
@@ -243,8 +159,6 @@ class PlotView3D:
                     custom_colours = [to_rgb(c) for c in custom_colours ]
                     foo = []
                     for ((r1, g1, b1), (r2, g2, b2), (r3, g3, b3)) in zip(custom_colours, custom_colours[1:], custom_colours[2:]):
-                        #foo.append((r2, g2, b2))
-                        #continue
                         t = 100
                         n2 = 2
                         for n in range(0, t):
@@ -274,6 +188,7 @@ class PlotView3D:
         self.ax.set_aspect('equal')
         return
 
+        # Asteroid belt -- work in progress
         random.seed(1000)
         for degree in range(0, 360):
             distance = random.randint(round(2.5 * AU), round(3.2 * AU))

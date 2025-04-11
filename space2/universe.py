@@ -140,18 +140,80 @@ class Universe:
 
 def create_bodies():
     bodies = dict()
+
+    # N: Longtitude of ascending node (OM)
+    # i: inclination
+    # w: argument of perihelion (small omega)  = longtitude of perihelion - longtitude of the ascending node
+    # a: semi-major axis
+    # e: eccentricity
+    # M: mean anomaly
+
+    # N, i, w, a, e shifts slight over time, so we use the values for April 19, 1990 (Earth & Pluto are missing)
+    # It is not common practice to use mean anomaly as an orbital parameter (because it is not!), but we
+    # can get the values from https://ssd.jpl.nasa.gov/horizons/app.html#/ using julian day 0: 1999-12-31
+    #               N       i         w         a         e    |
+    # Mercury   48.2163  7.0045   29.0882   0.387098  0.205633 |    M = 168.6562_deg + 4.0923344368_deg * d
+    # Venus     76.5925  3.3945   54.8420   0.723330  0.006778 |    M =  48.0052_deg + 1.6021302244_deg * d
+    # Earth   -11.26064 0.00005   85.901    1.000000  0.016710 |    M = 357.2894       0.9853068413288855
+    # Mars      49.4826  1.8498  286.3978   1.523688  0.093396 |    M =  18.6021_deg + 0.5240207766_deg * d
+    # Jupiter  100.3561  1.3036  273.8194   5.20256   0.048482 |    M =  19.8950_deg + 0.0830853001_deg * d
+    # Saturn   113.5787  2.4890  339.2884   9.55475   0.055580 |    M = 316.9670_deg + 0.0334442282_deg * d
+    # Uranus    73.9510  0.7732   96.5529  19.18176   0.047292 |    M = 142.5905_deg + 0.011725806_deg  * d
+    # Neptune  131.6737  1.7709  272.8675  30.05814   0.008598 |    M = 260.2471_deg + 0.005995147_deg  * d
+    #
+    # As of 31-12-1999: https://ssd.jpl.nasa.gov/horizons/app.html#/
+    #       EC     Eccentricity, e
+    #       QR     Periapsis distance, q (km)
+    #       IN     Inclination w.r.t X-Y plane, i (degrees)
+    #       OM     Longitude of Ascending Node, OMEGA, (degrees)
+    #       W      Argument of Perifocus, w (degrees)
+    #       Tp     Time of periapsis (Julian Day Number)
+    #       N      Mean motion, n (degrees/sec)
+    #       MA     Mean anomaly, M (degrees)
+    #       TA     True anomaly, nu (degrees)
+    #       A      Semi-major axis, a (km)
+    #       AD     Apoapsis distance (km)
+    #       PR     Sidereal orbit period (sec)
+    #
+    # Ceres:
+    #  EC= 7.837390637197418E-02 QR= 3.814252192614897E+08 IN= 1.058336111445534E+01
+    #  OM= 8.049437998936864E+01 W = 7.392263662469732E+01 Tp=  2451516.162549284287
+    #  N = 2.479113932292490E-06 MA= 5.855557387082620E+00 TA= 6.870203088713857E+00
+    #  A = 4.138611329459985E+08 AD= 4.462970466305074E+08 PR= 1.452131728641855E+08
+    #             N (OM)                      i (IN)              w (W)                   a (A) km                 e (EC)             M (MA)                  dM (N * 3600 * 24)
+    # Ceres    8.049437998936864E+01, 1.058336111445534E+01, 7.392263662469732E+01, 4.138611329459985E+08, 7.837390637197418E-02, 5.855557387082620E+00,  0.21419544375007113
+    #
+    # Pluto    110.0             113.175
+    # Haumea   122.1628          238.779
+    # Makemake  79.6194          294.835
+    # Eris      35.9409          151.643
+
     bodies["Sun"] =     SpaceObject("Sun",         ( 0, 0, 0),        YELLOW,     "#f29f05", "*", 696340, "star_sun.png", None)
-    bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0, 0), DARK_GRAY,  "#d1cfc8", "m",   2440, "...", Orbit("Sun",  0.4 * AU,    88))
-    bodies["Venus"] =   SpaceObject("Venus",   ( 0.7 * AU, 0, 0), YELLOW,     "#fade7c", "v",   6000, "...", Orbit("Sun",  0.7 * AU,   225))
-    bodies["Earth"] =   SpaceObject("Earth",   ( 1.0 * AU, 0, 0), BLUE,       "#023ca7", "e",   6400, "...", Orbit("Sun",  1.0 * AU,   365))
-    bodies["Mars"] =    SpaceObject("Mars",    ( 1.5 * AU, 0, 0), RED,        "#b82020", "m",   3390, "...", Orbit("Sun",  1.5 * AU,   687))
-    bodies["Ceres"] =   SpaceObject("Ceres",   ( 2.8 * AU, 0, 0), DARK_GRAY,  "#707070", "c",    490, "...", Orbit("Sun",  2.8 * AU,  1682))
-    bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0, 0), BROWN,      "#cea589", "J",  70000, "...", Orbit("Sun",  5.2 * AU,  4333))
-    bodies["Saturn"] =  SpaceObject("Saturn",  ( 9.6 * AU, 0, 0), YELLOW,     "#f6ddbd", "S",  58000, "...", Orbit("Sun",  9.6 * AU, 10759))
-    bodies["Uranus"] =  SpaceObject("Uranus",  (19.2 * AU, 0, 0), LIGHT_CYAN, "#bbe1e4", "U",  15800, "...", Orbit("Sun", 19.2 * AU, 30687))
-    bodies["Neptune"] = SpaceObject("Neptune", (30.0 * AU, 0, 0), LIGHT_BLUE, "#3d5ef9", "N",  15300, "...", Orbit("Sun", 30.0 * AU, 60190))
-    bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0, 0), DARK_GRAY,  "#ddc4af", "p",   2400, "...", Orbit("Sun", 39.5 * AU, 90560))
+
+    bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0, 0), DARK_GRAY,  "#d1cfc8", "m",   2440, "...",
+                                    Orbit("Sun", N=48.3313, i=7.0047, w=29.1241, a=0.387098, e=0.205635, M=168.6562, dM=4.0923344368))
+    bodies["Venus"] =   SpaceObject("Venus",   ( 0.7 * AU, 0, 0), YELLOW,     "#fade7c", "v",   6000, "...",
+                                    Orbit("Sun", 76.5925, 3.3945, 54.8420, 0.723330, 0.006778, 48.0052, 1.6021302244))
+    bodies["Earth"] =   SpaceObject("Earth",   ( 1.0 * AU, 0, 0), BLUE,       "#023ca7", "e",   6400, "...",
+                                    Orbit("Sun", -11.26064, 0.00005, 85.901, 1.000000, 0.016710, 357.2894, 0.9853068413288855))
+    bodies["Mars"] =    SpaceObject("Mars",    ( 1.5 * AU, 0, 0), RED,        "#b82020", "m",   3390, "...",
+                                    Orbit("Sun", 49.4826, 1.8498, 286.3978, 1.523688, 0.093396, 18.6021, 0.5240207766))
+    bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0, 0), BROWN,      "#cea589", "J",  70000, "...",
+                                    Orbit("Sun", 100.3561, 1.3036, 273.8194, 5.20256, 0.048482, 19.8950, 0.0830853001))
+    bodies["Saturn"] =  SpaceObject("Saturn",  ( 9.6 * AU, 0, 0), YELLOW,     "#f6ddbd", "S",  58000, "...",
+                                    Orbit("Sun", 113.5787, 2.4890, 339.2884, 9.55475, 0.055580, 316.9670, 0.0334442282))
+    bodies["Uranus"] =  SpaceObject("Uranus",  (19.2 * AU, 0, 0), LIGHT_CYAN, "#bbe1e4", "U",  15800, "...",
+                                    Orbit("Sun", 73.9510, 0.7732, 96.5529, 19.18176, 0.047292, 142.5905, 0.011725806))
+    bodies["Neptune"] = SpaceObject("Neptune", (30.0 * AU, 0, 0), LIGHT_BLUE, "#3d5ef9", "N",  15300, "...",
+                                    Orbit("Sun", 131.6737, 1.7709, 272.8675, 30.05814, 0.008598, 260.2471, 0.005995147))
+    bodies["Ceres"] =   SpaceObject("Ceres",   ( 2.8 * AU, 0, 0), DARK_GRAY,  "#707070", "c",    490, "...",
+                                    Orbit("Sun", 8.049437998936864E+01, 1.058336111445534E+01, 7.392263662469732E+01, 4.138611329459985E+08 / AU, 7.837390637197418E-02, 5.855557387082620E+00,  0.21419544375007113))
+
     bodies["Heroes"] = SpaceObject("Heroes",   ( 0.3 * AU, 0, 0), LIGHT_WHITE, "#eeeeee", "x", 0.040, "...", None)
+    return bodies
+
+
+    bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0, 0), DARK_GRAY,  "#ddc4af", "p",   2400, "...", Orbit("Sun", 39.5 * AU, 90560))
     #bodies["Asteroid Belt"] = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
     return bodies
 
@@ -188,7 +250,7 @@ def run_all_tests():
     print(universe.view, universe.view.universe)
     print(universe.plot_view, universe.plot_view.universe)
     print(universe.command, universe.command.universe)
-    print("Earth position:", universe.bodies["Earth"].position)
+    # print("Earth position:", universe.bodies["Earth"].position)
 
 if __name__ == "__main__":
     run_all_tests()

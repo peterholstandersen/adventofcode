@@ -1,6 +1,8 @@
 from common import *
 from sympy import Symbol, N
 from sympy.solvers import nonlinsolve
+import julian
+import datetime
 import mpmath
 import universe as u
 import view as v
@@ -93,33 +95,98 @@ class Course:
 
 class Orbit(Course):
     center = None
-    distance = None
-    orbit_time = None
+    N = i = w = a = e = M = dM = None
 
-    def __init__(self, center, distance, orbit_time, *args):
+    def __init__(self, center, N, i, w, a, e, M, dM, *args):
         self.center = center
-        self.distance = distance
-        self.orbit_time = orbit_time
+        self.N = math.radians(N)
+        self.i = math.radians(i)
+        self.w = math.radians(w)
+        self.a = a * AU
+        self.e = e
+        self.M = math.radians(M)
+        self.dM = math.radians(dM)
         super().__init__(*args)
+
+    def calculate_position1(self, d):
+        sin = math.sin
+        cos = math.cos
+        atan2 = math.atan2
+
+        N = self.N
+        i = self.i
+        w = self.w
+        a = self.a
+        e = self.e
+        M = self.M + d * self.dM
+
+        # https://stjarnhimlen.se/comp/tutorial.html
+
+        # perihelion: point closest to the sun
+
+        # To describe the position in the orbit, we use three angles: Mean Anomaly, True Anomaly, and Eccentric Anomaly.
+        # They are all zero when the planet is in perihelion:
+        # Mean Anomaly (M): This angle increases uniformly over time, by 360 degrees per orbital period.
+        # It's zero at perihelion. It's easily computed from the orbital period and the time since last perihelion.
+        #
+        # True Anomaly (v): This is the actual angle between the planet and the perihelion, as seen from the central
+        # body (in this case the Sun). It increases non-uniformly with time, changing most rapidly at perihelion.
+        #
+        # Eccentric Anomaly (E): This is an auxiliary angle used in Kepler's Equation, when computing the True Anomaly
+        # from the Mean Anomaly and the orbital eccentricity.
+        # Note that for a circular orbit (eccentricity=0), these three angles are all equal to each other.
+
+        # Now we must solve Kepler's equation M = e * sin(E) - E, where we know M, the mean anomaly, and the e the
+        # eccentricity, and we want to find E, the eccentricity anomaly. We start by computing a first approximation
+        # of E:
+
+        E0 = M + e * sin(M) * (1.0 * e * sin(M))
+
+        # Some experiments show that 3-4 iterations is enough
+        count = 0
+        while True:
+            count += 1
+            if count > 100:
+                print("Kepler's equation does not converge. Eccentricity is probably close to one:", e)
+                sys.exit(1)
+            E1 = E0 - (E0 - e * sin(E0) - M) / (1 - e * cos(E0))
+            if abs(E1 - E0) < math.radians(1E-06):
+                break
+            E0 = E1
+        E = E1
+
+        # The planet's distance and true anomaly
+        xv = a * (cos(E) - e)
+        yv = a * math.sqrt(1.0 - e**2) * sin(E)
+        v = atan2(yv, xv)
+        r = math.sqrt(xv**2 + yv**2)
+
+        # The planet's position in 3d space
+        xh = r * (cos(N) * cos(v + w) - sin(N) * sin(v + w) * cos(i))
+        yh = r * (sin(N) * cos(v + w) + cos(N) * sin(v + w) * cos(i))
+        zh = r * (sin(v + w) * sin(i))
+
+        r_check = sqrt(xh * xh + yh * yh + zh * zh) # must equal r except for rounding errors
+        if abs(r - r_check) > 0.001:
+            print("must be (nearly) equal", r, r_check, abs(r - r_check))
+            print(self)
+            sys.exit()
+
+        return (xh, yh, zh)
 
     def calculate_position(self, universe, _, __, now):
         center_xyz = universe.get_body_position(self.center)
         if center_xyz is None:
             print(f"{self.center} is lost in space.")
             return None
-        else:
-            (x, y, z) = center_xyz
-            day = (now + hash(self)) / 86400
-            angle = math.radians(360) - math.radians(360) * (float(day % self.orbit_time) / float(self.orbit_time))
-            dx = math.sin(angle) * self.distance
-            dy = math.cos(angle) * self.distance
-            return (x + dx, y + dy, z)
+        julian_day = julian.to_jd(datetime.datetime.fromtimestamp(now), fmt="jd")
+        return self.calculate_position1(julian_day)
 
     def view(self, now=0):
         return ""
 
     def __str__(self):
-        return f"Orbit({self.center}, {v.format_distance(self.distance)}, {self.orbit_time} days)"
+        return f"Orbit({self.center}, a={self.a / AU})"
 
 class BurnSequence(Course):
     body = None
@@ -182,13 +249,13 @@ if __name__ == "__main__":
     # print(doit(start_point=(0,0), end_point=(1000, 100), start_velocity=(0,0), end_velocity=(0, 100), max_acc=10))
     universe = u.big_bang()
     universe.update()
-    heroes = universe.bodies.get("Heroes")
-    earth = universe.bodies.get("Earth")
-    print(earth.course)
-    print("Earth pos:", earth.position)
+    # heroes = universe.bodies.get("Heroes")
+    mercury = universe.bodies.get("Mercury")
+    print(mercury.course)
+    print("Mercury pos:", mercury.position)
     universe.update()
-    universe.clock.set_factor(86400)
+    universe.clock.set_factor(10000)
     print("Sleep 100ms")
     time.sleep(0.1)
     universe.update()
-    print("Earth pos:", earth.position)
+    print("Mercury pos:", mercury.position)
