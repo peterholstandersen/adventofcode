@@ -1,3 +1,90 @@
+
+class Orbit(Course):
+    center = None
+    distance = None
+    orbit_time = None
+
+    def __init__(self, center, distance, orbit_time, *args):
+        self.center = center
+        self.distance = distance
+        self.orbit_time = orbit_time
+        super().__init__(*args)
+
+    def calculate_position(self, universe, _, __, now):
+        center_xyz = universe.get_body_position(self.center)
+        if center_xyz is None:
+            print(f"{self.center} is lost in space.")
+            return None
+        else:
+            (x, y, z) = center_xyz
+            day = (now + hash(self)) / 86400
+            angle = math.radians(360) - math.radians(360) * (float(day % self.orbit_time) / float(self.orbit_time))
+            dx = math.sin(angle) * self.distance
+            dy = math.cos(angle) * self.distance
+            return (x + dx, y + dy, z)
+
+    def view(self, now=0):
+        return ""
+
+
+def fun():
+    theta = np.linspace(0, 2 * np.pi, resolution)
+    x = a * np.cos(theta)
+    y = b * np.sin(theta)
+    z = 0
+    # Now for some matrix fun
+    plt.plot(x1, y1, z1, "-")
+
+
+def more_or_less_fun():
+        # Orbital elements: https://astronomy.swin.edu.au/cosmos/O/Orbital+Elements
+        eee = eccentricity = 0.205630
+        a = semimajor_axis = 57.909e+06
+        # b = semiminor_axis = a * sqrt(1 - e**2) ... can be decuded from longtitude of perihelion
+
+        I = inclination = math.radians(7.005)
+        w_bar = longtitude_of_perihelion = math.radians(77.45771895)
+        Omega = longtitude_ascending_node = math.radians(48.33961819)
+
+        T = centuries_past_J2000 = ...
+
+        # Perihelion: the point in the orbital path of a heavenly body that is nearest to the sun
+        #
+        # Longtitude of the perihelion (lowercase omega with a bar: w_bar): Det er nok hvor langt der er fra focus til perihelion
+        #
+        # Ascending node (Omega) (https://astronomy.swin.edu.au/cosmos/A/Ascending+Node): The ascending node is usually
+        # quoted  as the angular position at which a celestial body passes from the southern side of a reference plane
+        # to the northern side, hence ‘ascending'
+        #
+        # Argument of the perihelion (lowercase omega: w) is the rotation angle around the z-axis (i.e., in the x-y plane) around the focus
+        # - https://astronomy.swin.edu.au/cosmos/a/argument+of+perihelion
+
+        # Compute the argument of perihelion (lowercase omega: w)
+        w = w_bar - Omega
+
+        # and the mean anomaly (M): the period that has lapsed since the body passed perihelion (says something about the speed of the object)
+        M = L - w_bar + b*T**2
+
+        # If we rotate the axis of the orbit around the focus, then the rotation angle is the argument of perihelion (ω).
+
+
+        # ???????
+        T = (T_eph - 2451545) / 36525
+        M = L - w + b*T**2 + c*cos(fT) + s*sin(fT)
+        # find E where: M = E - e_star * sin(E), where e_star = 180 / pi * e = 57.29578 * e
+        #p = orbital_period = 87.9691  # sidereal (in relation to close star)
+        #M = mean_anolomy = 174.796    # degrees
+        # ?????
+
+        x = a * (cos(E) - e)
+        y = a * sqrt(1 - e**2) * sin(E)
+        z = 0
+
+        x_ecl = (cos(w)*cos(O) - sin(w)*sin(O)*cos(I)) * x + (-sin(w)*cos(O) - cos(w)*sin(O)*cos(I)) * y
+        y_ecl = (cos(w)*sin(O) + sin(w)*cos(O)*cos(I)) * x + (-sin(w)*sin(O) + cos(w)*cos(O)*cos(I)) * y
+        z_ecl = (sin(w)*sin(I)) * x + (cos(w)*sin(I)) * y
+
+
 # Create two 3D polygons
 v1 = np.array([ [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0], [0.5, 0.5, 1] ])
 vertices2 = np.array([

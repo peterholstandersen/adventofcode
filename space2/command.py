@@ -171,21 +171,39 @@ Examples:
         self.universe.plot_view.center = (xy[0], xy[1], 0)
         self.msg = f"Center set to ({v.format_distance(xy[0])}, {v.format_distance(xy[1])})"
 
+    def do_azim(self, arg):
+        azim = safe_float(arg)
+        if azim is None:
+            self.msg = "usage: azim <degrees>"
+            self.show = False
+        else:
+            (azim, elev) = self.universe.plot_view.set_view_point(azim=azim)
+            self.msg = f"Now viewing from azim {azim}, elev {elev}"
+
+    def do_elev(self, arg):
+        elev = safe_float(arg)
+        if elev is None:
+            self.msg = "usage: elev <degrees>"
+            self.show = False
+        else:
+            (azim, elev) = self.universe.plot_view.set_view_point(elev=elev)
+            self.msg = f"Now viewing from azim {azim}, elev {elev}"
+
     def do_up(self, arg):
-        self.universe.plot_view.adjust_view_point(0, 1)
-        self.msg = "Moving viewing point up"
+        (azim, elev) = self.universe.plot_view.adjust_view_point(elev=10)
+        self.msg = f"Moving viewing point up. Now viewing from azim {azim}, elev {elev}"
 
     def do_down(self, arg):
-        self.universe.plot_view.adjust_view_point(0, -10)
-        self.msg = "Moving viewing point down"
+        (azim, elev) = self.universe.plot_view.adjust_view_point(elev=-10)
+        self.msg = f"Moving viewing point down. Now viewing from azim {azim}, elev {elev}"
 
     def do_left(self, arg):
-        self.universe.plot_view.adjust_view_point(-10, 0)
-        self.msg = "Moving viewpoint left"
+        (azim, elev) = self.universe.plot_view.adjust_view_point(azim=-10)
+        self.msg = f"Moving viewing point left. Now viewing from azim {azim}, elev {elev}"
 
     def do_right(self, arg):
-        self.universe.plot_view.adjust_view_point(10, 0)
-        self.msg = "Moving viewpoint right"
+        (azim, elev) = self.universe.plot_view.adjust_view_point(azim=-10)
+        self.msg = f"Moving viewing point right. Now viewing from azim {azim}, elev {elev}"
 
     def do_course(self, arg):
         """

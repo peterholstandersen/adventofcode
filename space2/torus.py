@@ -28,5 +28,9 @@ ax.set_ylim(-size, size)
 ax.set_zlim(-size, size)
 ax.set_aspect("equal")
 
-ax.plot_surface(X, Y, Z, alpha=0.5, cmap="winter", shade=True)
+# cmap="winter"
+colour = "#043953"
+colour = "#07304B"
+colour = "#0A6270"
+ax.plot_surface(X, Y, Z, alpha=1, color=colour, shade=True)
 plt.show()
