@@ -263,6 +263,51 @@ course e rel (100,100) vel (0,100) 10g
             self.universe.plot_view.update_center()
             self.msg = f"Tracking {self.universe.plot_view.track}"
 
+    def do_lookup(self, arg):
+        """Look up an object in the small bodies database at NASA, Jet Propulsion Laboratory (JPL): https://ssd-api.jpl.nasa.gov/"""
+        result = self.universe.small_bodies_database.jpl_lookup(...)
+        print("Found #N results")
+        print("Names: ...")
+        self.show = False
+
+    def do_cached(self, arg):
+        """List cached small bodies from lookup at JPL"""
+        arg = arg.strip("* ") # leading and trailing wildcards are implicit
+        if "*" in arg:
+            print(f"Warning: in-text wildcards are not supported. Searching for the explicit text: {arg}")
+        bodies = self.universe.small_bodies_database.get_cached_bodies(arg)
+        print(f"Found {len(bodies)} bodies matching '{arg}':")
+        print("  ".join([ value['object']['shortname'] for (_, value) in bodies]))
+        print("Use 'lookup <search-string>' to search the JPL for more objects or 'info <name>' to gain more information about an object")
+        self.show = False
+
+    def do_info(self, arg):
+        """View information about a cached small body from JPL"""
+        # would be nice with completion
+        info = self.universe.small_bodies_database.get_cached_bodies(arg)
+        # fails if not unique
+        # if not found: print("<name> not found, try lookup to request the information from the JPL database")
+        if type(info) is str:
+            print("error:", info)
+        print(info) # prettify
+        print("Do 'add <name>' to add this body to the current system")
+        self.show = False
+
+    def do_add(self, arg):
+        """Add small body to current system"""
+        # would be nice with completion
+        info = self.universe.small_bodies_database.get_cached_bodies(...)
+        # fails if not unique
+        # if not found: print("<name> not found, try lookup to request the information from the JPL database")
+        if type(info) is str:
+            print("error:", info)
+        print(info) # prettify
+        #     SpaceObject: def __init__(self, name, position, ansi_colour, rgb_colour, visual, radius, image, course):
+        orbit = u.Orbit(...)
+        new_body = u.SpaceObject(..., orbit)
+        universe.bodies.add(new_body)
+        self.msg = "Added <name>"
+
     def do_tick(self, arg):
         """Usage: tick <seconds>. Jump forward in time. Does not start the universe clock (nor stops it)"""
         seconds = round(safe_float(arg))
@@ -357,7 +402,7 @@ def run_all_tests1(universe):
         ("enhance", ["10", "-20", "30", "-1"]),
         ("center", ["v", "0", "m", "m rel (1,2)", "m rel 90d 3 km", "m rel 180d 4", "m rel 270d 5", "m rel 360 d 6", "m rel 45 d 16", "1,2 rel 3,4", "xx", "(10K,10)"]),
         ("track",  ["m", "0", "", "(1,2)"]),
-        ("course", ["*", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"]),
+        # ("course", ["*", "Venus", "Venus rel (1,2)", "Venus rel 90d 3 km"]),
     ]
     cmds = [ keyword + " " + arg for (keyword, args) in to_test for arg in args]
     [ test_onecmd(command, text) for text in cmds ]

@@ -49,6 +49,6 @@ BG_CYAN = "\033[1;106m"
 # Bright versions starts at 100 (ends at 107)
 
 DEFAULT_COLOUR = END # LIGHT_WHITE
-ROOT = "/home/peter/PycharmProjects/adventofcode/spacemaster"  # for now
+ROOT = "/home/peter/PycharmProjects/adventofcode/space2"  # for now
 AU = 149.6e+06         # 149.600.000 km
 LIGHT_YEAR = 9.461e+12 # 9.461 trillion km

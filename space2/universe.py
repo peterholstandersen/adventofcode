@@ -5,6 +5,7 @@ import view as v
 import plot_view as pv
 import command as cmd
 from course import Orbit
+from small_bodies_database import SmallBodiesDatabase
 
 class SpaceObject:
     universe = None
@@ -19,6 +20,7 @@ class SpaceObject:
     acceleration = (0, 0)
     course = None
 
+    # does not accept wildcards, but do searches
     def __init__(self, name, position, ansi_colour, rgb_colour, visual, radius, image, course):
         self.name = name
         self.position = position
@@ -92,9 +94,10 @@ class Universe:
     view = None
     plot_view = None
     command = None
+    small_bodies_database = None
     _last_update = None
 
-    def __init__(self, bodies, clock, view, plot_view, command):
+    def __init__(self, bodies, clock, view, plot_view, command, small_bodies_database):
         self.alive = True
         self.bodies = bodies
         self.clock = clock
@@ -106,6 +109,7 @@ class Universe:
         self.view.universe = self
         self.plot_view.universe = self
         self.command.universe = self
+        self.small_bodies_database = small_bodies_database
         for body in bodies.values():
             body.universe = self
         self.update(force=True)
@@ -239,7 +243,8 @@ def big_bang():
     view = v.View((0, 0), plot_view.scale, 4)
     command = cmd.Command("x")
     bodies = create_bodies()
-    universe = Universe(bodies, clock, view, plot_view, command)
+    small_bodies_database = SmallBodiesDatabase("small_bodies")
+    universe = Universe(bodies, clock, view, plot_view, command, small_bodies_database)
     return universe
 
 def run_all_tests():

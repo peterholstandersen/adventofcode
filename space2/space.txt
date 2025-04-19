@@ -1,6 +1,34 @@
 https://calgary.rasc.ca/orbits.htm
 https://ssd.jpl.nasa.gov/horizons/app.html#/
 
+https://ssd-api.jpl.nasa.gov/doc/sbdb.html
+https://ssd-api.jpl.nasa.gov/sbdb.api?sstr=Eros
+
+
+
+foo = {
+    # N: longtiude of ascending node (om):
+    { "value":"304", "sigma":"1.2e-05", "name":"om", "title":"longitude of the ascending node", "label":"node", "units":"deg" },
+    # i: inclination (i)
+    { "value":"10.8", "sigma":"2.8e-06", "name":"i", "title":"inclination", "label":"i", "units":"deg" },
+    # w: argument of the perihelion (w)
+    { "value":"179", "sigma":"1.3e-05", "name":"w", "title":"argument of perihelion", "label":"peri", "units":"deg" },
+    # a: semi-major axis
+    { "value":"1.46", "sigma":"4.8e-10", "name":"a", "title":"semi-major axis", "label":"a", "units":"au" },
+    # e: eccentricity
+    { "value":"0.223", "sigma":"1.2e-08", "name":"e", "title":"eccentricity", "label":"e", "units":null },
+    # mean anomaly
+    { "value":"183", "sigma":"5.7e-06", "name":"ma", "title":"mean anomaly", "label":"M", "units":"deg" },
+    # mean motion (n degs/day):  dM = n (same unit!)
+    { "value":"0.56", "sigma":"2.7e-10", "name":"n", "title":"mean motion", "label":"n", "units":"deg/d" },
+
+
+    { "value":"1.13", "sigma":"1.8e-08", "name":"q", "title":"perihelion distance", "label":"q", "units":"au" },
+    { "value":"2458516.099", "sigma":"1e-05", "name":"tp", "title":"time of perihelion passage", "label":"tp", "units":"TDB" },
+    { "value":"643", "sigma":"3.1e-07", "name":"per", "title":"orbital period", "label":"period", "units":"d" },
+    { "value":"1.78", "sigma":"5.8e-10", "name":"ad", "title":"aphelion distance", "label":"Q", "units":"au" },
+}
+
 # formulas: https://ssd.jpl.nasa.gov/planets/approx_pos.html
 
                                 Mercury  Earth

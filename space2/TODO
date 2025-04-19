@@ -1,3 +1,7 @@
+reverse condition in plot_view, draw_bodies
+move computation of light source to helper function
+draw_bodies and command: do enhance
+move body-specific rendering (Heroes, Uranus, Jupiter) to SpaceBody (or similar)
 
 
 ring space (gate placeholders)

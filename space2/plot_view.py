@@ -1,6 +1,7 @@
 from common import *
 from utils import *
 import universe as u
+import course as c
 import sys
 import itertools
 import matplotlib
@@ -112,6 +113,22 @@ class PlotView3D:
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=body, color='#808080', alpha=1)
         self.ax.plot_trisurf(vertices1[:, 0], vertices1[:, 1], vertices1[:, 2], triangles=aft, color='#fc272f', alpha=1)
 
+    def plot_trajectory(self, body):
+        return
+        now = self.universe._last_update
+        if type(body.course) is c.Orbit:
+            positions = []
+            for theta in np.linspace(0, 2 * math.pi, 360):
+                day = theta / body.course.dM # dM is radians per day
+                timestamp = now + day * 24 * 3600
+                positions.append(body.course.calculate_position(self.universe, None, None, timestamp))
+            (xs, ys, zs) = (
+                [pos[0] for pos in positions],
+                [pos[1] for pos in positions],
+                [pos[2] for pos in positions]
+            )
+            self.ax.plot(xs, ys, zs)
+
     def draw_bodies(self, frame=0):
         plt.cla()
         self.set_scale(self.scale)
@@ -122,11 +139,10 @@ class PlotView3D:
         #    self.ax.plot(x, y, z, marker="o", markersize=1, color="#000000")
 
         for body in self.universe.bodies.values():
-            if len(body.position) != 3:
-                print(body.name, body.position)
-                sys.exit()
             (x, y, z) = body.position
             if min_x <= x <= max_x and min_y <= y <= max_y and min_z <= z <= max_z:
+                if body.name == "Mercury":
+                    self.plot_trajectory(body)
                 if x == 0 and y == 0:
                     shade = False
                     ls = None
@@ -208,6 +224,8 @@ class PlotView3D:
             sys.exit()
         self.universe.update()
         self.draw_bodies(frame)
+
+
 
 # ==================================
 
