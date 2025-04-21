@@ -6,6 +6,27 @@ import plot_view as pv
 import command as cmd
 from course import Orbit
 from small_bodies_database import SmallBodiesDatabase
+import matplotlib
+from matplotlib.colors import ListedColormap, to_rgb, to_hex
+import numpy as np
+
+def create_jupiter_colour_map():
+    custom_colours = ["#977961", "#B9735A", "#DBCAB6", "#DDB099", "#ECD8D1", "#B18F85",
+                      "#9A7E73", "#785F4B", "#977961", "#977961"]
+    custom_colours = [to_rgb(c) for c in custom_colours]
+    blended_colours = []
+    for ((r1, g1, b1), (r2, g2, b2), (r3, g3, b3)) in zip(custom_colours, custom_colours[1:], custom_colours[2:]):
+        t = 100
+        n2 = 2
+        for n in range(0, t):
+            n1 = (t - n)
+            n3 = n
+            n2 = (n1 + n3) * 2
+            bar = n1 + n2 + n3
+            blended_colours.append(((r1 * n1 + r2 * n2 + r3 * n3) / bar,
+                                    (g1 * n1 + g2 * n2 + g3 * n3) / bar,
+                                    (b1 * n1 + b2 * n2 + b3 * n3) / bar))
+    return ListedColormap(blended_colours)
 
 class SpaceObject:
     universe = None
@@ -19,9 +40,10 @@ class SpaceObject:
     velocity = (0, 0)
     acceleration = (0, 0)
     course = None
+    colour_map = None
 
     # does not accept wildcards, but do searches
-    def __init__(self, name, position, ansi_colour, rgb_colour, visual, radius, image, course):
+    def __init__(self, name, position, ansi_colour, rgb_colour, visual, radius, image, course, colour_map):
         self.name = name
         self.position = position
         self.colour = ansi_colour
@@ -31,6 +53,7 @@ class SpaceObject:
         self.radius = radius
         self.image = image
         self.course = course
+        self.colour_map = colour_map
 
     def get_visual(self, size_cl, offset_cl, center_xy, scale, enhance=1):
         visual = dict()
@@ -192,32 +215,33 @@ def create_bodies():
     # Makemake  79.6194          294.835
     # Eris      35.9409          151.643
 
-    bodies["Sun"] =     SpaceObject("Sun",         ( 0, 0, 0),        YELLOW,     "#f29f05", "*", 696340, "star_sun.png", None)
+    bodies["Sun"] =     SpaceObject("Sun",         ( 0, 0, 0),        YELLOW,     "#f29f05", "*", 696340, "star_sun.png", None, None)
 
     bodies["Mercury"] = SpaceObject("Mercury", ( 0.4 * AU, 0, 0), DARK_GRAY,  "#d1cfc8", "m",   2440, "...",
-                                    Orbit("Sun", N=48.3313, i=7.0047, w=29.1241, a=0.387098, e=0.205635, M=168.6562, dM=4.0923344368))
+                                    Orbit("Sun", N=48.3313, i=7.0047, w=29.1241, a=0.387098, e=0.205635, M=168.6562, dM=4.0923344368), None)
     bodies["Venus"] =   SpaceObject("Venus",   ( 0.7 * AU, 0, 0), YELLOW,     "#fade7c", "v",   6000, "...",
-                                    Orbit("Sun", 76.5925, 3.3945, 54.8420, 0.723330, 0.006778, 48.0052, 1.6021302244))
+                                    Orbit("Sun", 76.5925, 3.3945, 54.8420, 0.723330, 0.006778, 48.0052, 1.6021302244), None)
     bodies["Earth"] =   SpaceObject("Earth",   ( 1.0 * AU, 0, 0), BLUE,       "#023ca7", "e",   6400, "...",
-                                    Orbit("Sun", -11.26064, 0.00005, 85.901, 1.000000, 0.016710, 357.2894, 0.9853068413288855))
+                                    Orbit("Sun", -11.26064, 0.00005, 85.901, 1.000000, 0.016710, 357.2894, 0.9853068413288855), None)
     bodies["Mars"] =    SpaceObject("Mars",    ( 1.5 * AU, 0, 0), RED,        "#b82020", "m",   3390, "...",
-                                    Orbit("Sun", 49.4826, 1.8498, 286.3978, 1.523688, 0.093396, 18.6021, 0.5240207766))
+                                    Orbit("Sun", 49.4826, 1.8498, 286.3978, 1.523688, 0.093396, 18.6021, 0.5240207766), None)
     bodies["Jupiter"] = SpaceObject("Jupiter", ( 5.2 * AU, 0, 0), BROWN,      "#cea589", "J",  70000, "...",
-                                    Orbit("Sun", 100.3561, 1.3036, 273.8194, 5.20256, 0.048482, 19.8950, 0.0830853001))
+                                    Orbit("Sun", 100.3561, 1.3036, 273.8194, 5.20256, 0.048482, 19.8950, 0.0830853001), create_jupiter_colour_map())
     bodies["Saturn"] =  SpaceObject("Saturn",  ( 9.6 * AU, 0, 0), YELLOW,     "#f6ddbd", "S",  58000, "...",
-                                    Orbit("Sun", 113.5787, 2.4890, 339.2884, 9.55475, 0.055580, 316.9670, 0.0334442282))
+                                    Orbit("Sun", 113.5787, 2.4890, 339.2884, 9.55475, 0.055580, 316.9670, 0.0334442282), None)
+    viridis_big = matplotlib.colormaps['viridis']
     bodies["Uranus"] =  SpaceObject("Uranus",  (19.2 * AU, 0, 0), LIGHT_CYAN, "#bbe1e4", "U",  15800, "...",
-                                    Orbit("Sun", 73.9510, 0.7732, 96.5529, 19.18176, 0.047292, 142.5905, 0.011725806))
+                                    Orbit("Sun", 73.9510, 0.7732, 96.5529, 19.18176, 0.047292, 142.5905, 0.011725806), ListedColormap(viridis_big(np.linspace(0.25, 0.75, 128))))
     bodies["Neptune"] = SpaceObject("Neptune", (30.0 * AU, 0, 0), LIGHT_BLUE, "#3d5ef9", "N",  15300, "...",
-                                    Orbit("Sun", 131.6737, 1.7709, 272.8675, 30.05814, 0.008598, 260.2471, 0.005995147))
+                                    Orbit("Sun", 131.6737, 1.7709, 272.8675, 30.05814, 0.008598, 260.2471, 0.005995147), None)
     bodies["Ceres"] =   SpaceObject("Ceres",   ( 2.8 * AU, 0, 0), DARK_GRAY,  "#707070", "c",    490, "...",
-                                    Orbit("Sun", 8.049437998936864E+01, 1.058336111445534E+01, 7.392263662469732E+01, 4.138611329459985E+08 / AU, 7.837390637197418E-02, 5.855557387082620E+00,  0.21419544375007113))
+                                    Orbit("Sun", 8.049437998936864E+01, 1.058336111445534E+01, 7.392263662469732E+01, 4.138611329459985E+08 / AU, 7.837390637197418E-02, 5.855557387082620E+00,  0.21419544375007113), None)
 
-    bodies["Heroes"] = SpaceObject("Heroes",   ( 0.3 * AU, 0, 0), LIGHT_WHITE, "#eeeeee", "x", 0.040, "...", None)
+    bodies["Heroes"] = SpaceObject("Heroes",   ( 0.3 * AU, 0, 0), LIGHT_WHITE, "#eeeeee", "x", 0.040, "...", None, None)
     return bodies
 
 
-    bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0, 0), DARK_GRAY,  "#ddc4af", "p",   2400, "...", Orbit("Sun", 39.5 * AU, 90560))
+    bodies["Pluto"] =   SpaceObject("Pluto",   (39.5 * AU, 0, 0), DARK_GRAY,  "#ddc4af", "p",   2400, "...", Orbit("Sun", 39.5 * AU, 90560), None)
     #bodies["Asteroid Belt"] = Ring(2.5 * AU, 3.3 * AU, 0.25, "Asteroid Belt",   (0, 0),    DARK_GRAY,  ".", None, "...", None, None, None)
     return bodies
 

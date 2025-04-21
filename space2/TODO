@@ -1,24 +1,20 @@
-reverse condition in plot_view, draw_bodies
-move computation of light source to helper function
-draw_bodies and command: do enhance
-move body-specific rendering (Heroes, Uranus, Jupiter) to SpaceBody (or similar)
+"run 1d" results in error
 
+draw_bodies and command: do enhance
+
+plot pologons
+plot trajectories
+
+do uuuuu, rrrr, dddd, llll
 
 ring space (gate placeholders)
 ilus system
 gate
 
-cleanup orbit computation (course.py)  --- really use mean anomaly?
 use linspace to plot traj
 pluto
 define comet :) more asteroids?
-get orbital parameters from jpl directly ?
-
-Enhance not working? ... well, not implemented, so ...
-
-textures => SpaceObject
-
-polygons
+use orbital parameters from jpl directly ?
 
 dark gods
 
@@ -34,22 +30,16 @@ text below space objects (see iPad)
 crafts
 moons?
 
-trajectories
-
 Whatca want?
 - fly A to B
 - combat
 - for next playsession (what exactly?) -- fly through ring, new systems, dark god interception -- only combat would be needed, but will not repeat that
-
-asteroid belt
 
 Fiddle
 - center (0,0) => Sun
 - format info text on view
 - flip-and-burn time command
 - craft in list: speed, acc, course, tti
-
-optimize
 
 dont exit on problems with orbit computation
 
@@ -62,10 +52,8 @@ Course 1.0
 Tech dept
 - clean out old clock stuff if new clock is working
 - animation should probably be paused when clock is not running ?
-- orbit starting position -- now hash(self)
-- colour maps
 - big_bang defaults (time, heroes, space bodies, view params) should not be in universe
-- view default: remove magic constants
+- view default: remove magic constants?
 - join utils and common?
 ===================================================================================
 multiple systems / travel through gate
@@ -78,15 +66,12 @@ try to intercept slower speed
 when moving objects, move them in the right order, so that orbiting works (dual stars orbits a fixed point, not eachother)
 - planets first, then satellites, then satellites-satellistes (if any), then crafts on a course
 lock everything on command, lock everything on update ???
-verify: what are keys and visuals: keys are 1-2 characters, visuals are single char (first char of key), which is first two char of name
-command identification of targets are the first letters of the name (ignore caps) until unambigious -- otherwise error
 torps are 00, 01, ..., 09, 10, 11, 12, 13. Last digit is the visual char
 missiles are named after their target(s), e.g., 00a, 00b, 00c -- missiles are removed when their target disappears
 you can remove multiple missile by "00*". In general, the remove command takes multiple arguments (rm is also remove)
 lay out torpedoes and send them off later, torps & missiles can also be sent after other targets (and possibly not detonate)
 --------------------------------------
 Ilus system
-use # or . for ring zone ... how to handle 1377 gates ... when do not draw them all, just representatives
 cmd full_stop: an object to a full stop (vel=0, acc=0, course cancelled)
 cmd Reset ID: reread from file
 disable superuser commands when in user mode
@@ -101,5 +86,4 @@ viewing options
 listen for event on resize window? and update view
 "run" and "tick" should accept other than "seconds" as argument
 Jupiter moons
-objects with texture (Jupiter)
 gravity

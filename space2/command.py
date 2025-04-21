@@ -202,7 +202,7 @@ Examples:
         self.msg = f"Moving viewing point left. Now viewing from azim {azim}, elev {elev}"
 
     def do_right(self, arg):
-        (azim, elev) = self.universe.plot_view.adjust_view_point(azim=-10)
+        (azim, elev) = self.universe.plot_view.adjust_view_point(azim=+10)
         self.msg = f"Moving viewing point right. Now viewing from azim {azim}, elev {elev}"
 
     def do_course(self, arg):

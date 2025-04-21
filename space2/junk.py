@@ -1,3 +1,16 @@
+# Asteroid belt -- work in progress
+random.seed(1000)
+for degree in range(0, 360):
+    distance = random.randint(round(2.5 * AU), round(3.2 * AU))
+    offset = (frame / (5 * 16)) * (3.2 * AU) ** 3 / distance ** 3
+    z = random.randint(-round(0.1 * AU), round(0.1 * AU))
+    (x, y) = (math.sin(math.radians(degree - offset)), math.cos(math.radians(degree - offset)))
+    (x, y) = (x * distance, y * distance)
+    z = 0
+    if abs(x) <= self.width / 2 and abs(y) <= self.height / 2 and abs(z) <= self.depth / 2:
+        self.ax.plot(x, y, z, marker="o", markersize=1, color="#505050")
+
+self.ax.set_aspect('equal')
 
 class Orbit(Course):
     center = None
